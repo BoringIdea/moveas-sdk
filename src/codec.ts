@@ -1,3 +1,5 @@
+import { bcs } from '@mysten/sui/bcs';
+ 
  export type MoveType = 'u8' | 'u16' | 'u32' | 'u64' | 'u128' | 'u256' | 'bool' | 'String' | 'Address' | 'Vector';
 
  export type SchemaField = {
@@ -12,7 +14,7 @@ export type SchemaItem = {
   [key: string]: SchemaItemValue;
 };
 
-export class SchemaCodec {
+export class Codec {
   private schema: SchemaField[];
 
   constructor(schemaString: string) {
@@ -88,39 +90,11 @@ export class SchemaCodec {
 
   encodeToBytes(item: SchemaItem): Uint8Array {
     const encodedString = this.encode(item);
-    return new TextEncoder().encode(encodedString);
+    return bcs.string().serialize(encodedString).toBytes();
   }
 
   decodeFromBytes(bytes: Uint8Array): SchemaItem {
-    const decodedString = new TextDecoder().decode(bytes);
+    const decodedString = bcs.string().parse(bytes);
     return this.decode(decodedString);
   }
 }
-
-
-// ============ TEST ============
-console.log('===== TEST =====\n');
-const schemaCodec = new SchemaCodec("name: String, age: u64, scores: Vector<u16>, address: Address");
-
-// 编码
-const item = {
-  name: "Alice",
-  age: 30n,
-  scores: [95n, 87n, 91n],
-  address: "0x1234567890abcdef"
-};
-
-const encodedString = schemaCodec.encode(item);
-console.log('encodedString:', encodedString);
-
-// 解码
-const decodedItem = schemaCodec.decode(encodedString);
-console.log('decodedItem', decodedItem);
-
-// 编码为 Uint8Array
-const encodedBytes = schemaCodec.encodeToBytes(item);
-console.log('encodedBytes', encodedBytes);
-
-// 从 Uint8Array 解码
-const decodedItemFromBytes = schemaCodec.decodeFromBytes(encodedBytes);
-console.log('decodedItemFromBytes', decodedItemFromBytes);
