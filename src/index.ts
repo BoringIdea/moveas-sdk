@@ -3,3 +3,4 @@ export * from './schema';
 export * from './constants';
 export * from './utils';
 export * from './sas';
+export * from './types';

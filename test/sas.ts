@@ -14,9 +14,10 @@ const item = {
 const encodedItem = schemaCodec.encodeToBytes(item);
 
 const result = await sas.attest(
-  '0xa2a2005500f95e3decd11159aa7fd86cdf0785beec37b89ffdd40154153b52de',
-  '0xa2a2005500f95e3decd11159aa7fd86cdf0785beec37b89ffdd40154153b52de',
+  '0x08b04a8a5d2d45e622d6f38fa0a2c700ca890a0b85b8b76cb614b1795321c0e7',
+  '0x0',
   keypair.toSuiAddress(),
+  false,
   BigInt(Date.now() + 1000 * 60 * 60 * 24),
   encodedItem,
   'test',
@@ -25,11 +26,17 @@ const result = await sas.attest(
 );
 console.log('result:', result);
 
-const attestation = await sas.getAttestation('0x7e27b3eb26eef67263901e3f18c13e60bfa4f0a7d0c570de2f5fa0b57d6e82a4');
-console.log('attestation:', attestation);
+const attestationRegistry = await sas.getAttestationRegistry();
+console.log('attestationRegistry:', attestationRegistry);
 
-const decodedItem = schemaCodec.decodeFromBytes(attestation.data);
-console.log('decodedItem:', decodedItem);
+for (const [key, _] of attestationRegistry.attestations) {
+  const attestation = await sas.getAttestation(key);
+  console.log('attestation:', attestation);
+
+  const decodedItem = schemaCodec.decodeFromBytes(attestation.data);
+  console.log('decode attestation data:', decodedItem);
+}
+
 
 
 

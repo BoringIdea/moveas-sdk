@@ -24,11 +24,37 @@ export function getKeypair(): Ed25519Keypair {
 export function getPackageId(network: Network): string {
   switch (network) {
     case 'mainnet':
-      return PACKAGES.mainnet.ID;
+      return PACKAGES.mainnet.PackageID;
     case 'testnet':
-      return PACKAGES.testnet.ID;
+      return PACKAGES.testnet.PackageID;
     case 'devnet':
-      return PACKAGES.devnet.ID;
+      return PACKAGES.devnet.PackageID;
+    default:
+      throw new Error('Invalid network');
+  }
+}
+
+export function getSchemaRegistryId(network: Network): string {
+  switch (network) {
+    case 'mainnet':
+      return PACKAGES.mainnet.SchemaRegistryID;
+    case 'testnet':
+      return PACKAGES.testnet.SchemaRegistryID;
+    case 'devnet':
+      return PACKAGES.devnet.SchemaRegistryID;
+    default:
+      throw new Error('Invalid network');
+  }
+}
+
+export function getAttestationRegistryId(network: Network): string {
+  switch (network) {
+    case 'mainnet':
+      return PACKAGES.mainnet.AttestationRegistryID;
+    case 'testnet':
+      return PACKAGES.testnet.AttestationRegistryID;
+    case 'devnet':
+      return PACKAGES.devnet.AttestationRegistryID;
     default:
       throw new Error('Invalid network');
   }

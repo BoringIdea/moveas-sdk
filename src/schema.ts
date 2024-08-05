@@ -5,32 +5,41 @@ import {
 import { Transaction } from '@mysten/sui/transactions';
 import { bcs } from '@mysten/sui/bcs';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
-import { getClient, getPackageId, Network } from './utils';
+import { getClient, getPackageId, getSchemaRegistryId, getAttestationRegistryId, Network } from './utils';
 
-interface SchemaRecord {
+export interface SchemaRecord {
   id: string;
   schema: Uint8Array;
   resolver: any | null;
+}
+
+export interface SchemaRegistry {
+  id: string;
+  schema_records: Map<string, string>;
 }
 
 export class Schema {
   private client: SuiClient;
   private signer: Ed25519Keypair;
   private packageId: string;
+  private network: Network;
 
   constructor(network: Network, signer: Ed25519Keypair) {
     this.client = getClient(network);
     this.signer = signer;
     this.packageId = getPackageId(network);
+    this.network = network;
   }
 
   public async new(schema: Uint8Array): Promise<SuiTransactionBlockResponse> {
+    const schemaRegistryId = getSchemaRegistryId(this.network);
     const tx = new Transaction();
     
     const record = tx.moveCall({
-      target: `${this.packageId}::schema_record::new`,
+      target: `${this.packageId}::schema::new`,
       arguments: [
-        tx.pure(schema),
+        tx.object(schemaRegistryId),
+        tx.pure.vector('u8', schema),
       ],
     });
 
@@ -50,12 +59,14 @@ export class Schema {
   }
 
   async newWithResolver(schema: Uint8Array): Promise<SuiTransactionBlockResponse> {
+    const schemaRegistryId = getSchemaRegistryId(this.network);
     const tx = new Transaction();
     
     tx.moveCall({
-      target: `${this.packageId}::schema_record::new_with_resolver`,
+      target: `${this.packageId}::schema::new_with_resolver`,
       arguments: [
-        tx.pure(schema),
+        tx.object(schemaRegistryId),
+        tx.pure.vector('u8', schema),
       ],
     });
 
@@ -76,7 +87,7 @@ export class Schema {
     const tx = new Transaction();
     
     tx.moveCall({
-      target: `${this.packageId}::schema_record::new_resolver_builder`,
+      target: `${this.packageId}::schema::new_resolver_builder`,
       arguments: [
         bcs.string().serialize(schemaAddress),
       ],
@@ -92,7 +103,7 @@ export class Schema {
     const tx = new Transaction();
     
     tx.moveCall({
-      target: `${this.packageId}::schema_record::add_resolver`,
+      target: `${this.packageId}::schema::add_resolver`,
       arguments: [
         tx.object(schemaRecord),
         tx.object(resolverBuilder),
@@ -109,7 +120,7 @@ export class Schema {
     const tx = new Transaction();
     
     tx.moveCall({
-      target: `${this.packageId}::schema_record::start_attest`,
+      target: `${this.packageId}::schema::start_attest`,
       arguments: [
         tx.object(schemaRecord),
       ],
@@ -125,7 +136,7 @@ export class Schema {
     const tx = new Transaction();
     
     tx.moveCall({
-      target: `${this.packageId}::schema_record::finish_attest`,
+      target: `${this.packageId}::schema::finish_attest`,
       arguments: [
         tx.object(schemaRecord),
         tx.object(request),
@@ -136,6 +147,39 @@ export class Schema {
       signer: this.signer,
       transaction: tx,
     });
+  }
+
+  async getSchemaRegistry(): Promise<SchemaRegistry> {
+    const schemaRegistryId = getSchemaRegistryId(this.network);
+    const response = await this.client.getObject({
+      id: schemaRegistryId,
+      options: { showContent: true, showType: true },
+    });
+
+    if (response.error) {
+      throw new Error(`Failed to fetch object: ${response.error}`);
+    }
+
+    const object = response.data;
+    if (!object || !object.content || object.content.dataType !== 'moveObject') {
+      throw new Error('Invalid object data');
+    }
+
+    const fields = object.content.fields as any;
+
+    const schemaRecords = new Map<string, string>();
+    if (fields && fields.schema_records && fields.schema_records.fields && fields.schema_records.fields.contents) {
+      for (const item of fields.schema_records.fields.contents) {
+        if (item.fields.key && item.fields.value) {
+          schemaRecords.set(item.fields.key, item.fields.key);
+        }
+      }
+    }
+
+    return {
+      id: object.objectId,
+      schema_records: schemaRecords
+    };
   }
   
   async getSchemaRecord(id: string): Promise<SchemaRecord> {
