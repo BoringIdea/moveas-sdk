@@ -9,7 +9,8 @@ const template = 'name: string, age: u64';
 const schemaItem = bcs.string().serialize(template).toBytes();
 
 const res = await schema.new(
-  new Uint8Array(schemaItem)
+  new Uint8Array(schemaItem),
+  false
 );
 console.log('res:', res);
 
@@ -23,3 +24,6 @@ for (const [key, _] of registry.schema_records) {
   const decodedSchema = bcs.string().parse(schemaRecord.schema);
   console.log('decodedSchema:', decodedSchema);
 }
+
+// const schemaRecord = await schema.getSchemaRecord('0x7a34aff1914b8ff425b789900da346fa890f3e835aeea54786bef944ef77c5b8');
+// console.log('schemaRecord:', schemaRecord);

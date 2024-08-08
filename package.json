@@ -5,13 +5,14 @@
   "repository": "git@github.com:lukema95/sas-sdk.git",
   "author": "Luke Ma <lukema95@gmail.com>",
   "license": "MIT",
-  "type": "module",
+  "type": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts"
   },
   "devDependencies": {
+    "@types/node": "^22.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   },

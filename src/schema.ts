@@ -5,17 +5,27 @@ import {
 import { Transaction } from '@mysten/sui/transactions';
 import { bcs } from '@mysten/sui/bcs';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { ObjectOwner } from '@mysten/sui/client';
 import { getClient, getPackageId, getSchemaRegistryId, getAttestationRegistryId, Network } from './utils';
+import { SuiAddress } from './types';
+import bs58 from 'bs58';
 
 export interface SchemaRecord {
-  id: string;
+  id: SuiAddress;
+  incrementId: number;
+  attestationCnt?: number | 0;
   schema: Uint8Array;
+  revokable: boolean;
   resolver: any | null;
+  owner: ObjectOwner | null;
+  creator: SuiAddress;
+  createdAt: number;
+  txHash: string;
 }
 
 export interface SchemaRegistry {
-  id: string;
-  schema_records: Map<string, string>;
+  id: SuiAddress;
+  schema_records: Map<SuiAddress, SuiAddress>;
 }
 
 export class Schema {
@@ -31,7 +41,7 @@ export class Schema {
     this.network = network;
   }
 
-  public async new(schema: Uint8Array): Promise<SuiTransactionBlockResponse> {
+  public async new(schema: Uint8Array, revokable: boolean): Promise<SuiTransactionBlockResponse> {
     const schemaRegistryId = getSchemaRegistryId(this.network);
     const tx = new Transaction();
     
@@ -40,6 +50,7 @@ export class Schema {
       arguments: [
         tx.object(schemaRegistryId),
         tx.pure.vector('u8', schema),
+        tx.pure.bool(revokable)
       ],
     });
 
@@ -185,7 +196,12 @@ export class Schema {
   async getSchemaRecord(id: string): Promise<SchemaRecord> {
     const response = await this.client.getObject({
       id: id,
-      options: { showContent: true, showType: true },
+      options: { 
+        showContent: true, 
+        showType: true ,
+        showOwner: true,
+        showPreviousTransaction: true
+      },
     });
   
     if (response.error) {
@@ -208,7 +224,7 @@ export class Schema {
     } else {
       throw new Error('Invalid schema format');
     }
-  
+    
     let resolver: any | null = null;
     if (fields.resolver && fields.resolver.fields) {
       resolver = {
@@ -220,9 +236,14 @@ export class Schema {
     return {
       id: object.objectId,
       schema: schema,
-      resolver: resolver
+      resolver: resolver,
+      incrementId: fields.incrementing_id,
+      creator: fields.creator,
+      revokable: fields.revokable,
+      createdAt: fields.created_at,
+      txHash:  bs58.encode(fields.tx_hash),
+      owner: response.data?.owner || null,
     };
   }
 }
-
 

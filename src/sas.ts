@@ -5,20 +5,24 @@ import {
 import { Transaction } from '@mysten/sui/transactions';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { SUI_CLOCK_OBJECT_ID } from '@mysten/sui/utils';
+import { ObjectOwner } from '@mysten/sui/client'
 import { getAttestationRegistryId, getClient, getPackageId, Network } from './utils';
 import { SuiAddress } from './types';
+import bs58 from 'bs58';
 
 export interface Attestation {
   id: string;
   schema: SuiAddress;
   ref_attestation: SuiAddress;
   attester: SuiAddress;
+  txHash: string;
   time: bigint;
   expiration_time: bigint;
   data: Uint8Array;
   name: string;
   description: string;
   url: string;
+  owner: ObjectOwner | null;
 }
 
 export interface Status {
@@ -48,7 +52,6 @@ export class Sas {
     schemaRecordId: string,
     refAttestationId: string,
     recipient: string,
-    revokable: boolean,
     expirationTime: bigint,
     data: Uint8Array,
     name: string,
@@ -65,7 +68,6 @@ export class Sas {
         tx.object(registryId),
         tx.pure.address(refAttestationId),
         tx.pure.address(recipient),
-        tx.pure.bool(revokable),
         tx.pure.u64(expirationTime), 
         tx.pure.vector('u8', data),
         tx.pure.string(name),
@@ -92,7 +94,6 @@ export class Sas {
     schemaRecordId: string,
     refAttestationId: string,
     recipient: string,
-    revokable: boolean,
     expirationTime: bigint,
     data: Uint8Array,
     name: string,
@@ -110,7 +111,6 @@ export class Sas {
         tx.object(registryId),
         tx.pure.address(refAttestationId),
         tx.pure.address(recipient),
-        tx.pure.bool(revokable),
         tx.pure.u64(expirationTime), 
         tx.pure.vector('u8', data),
         tx.pure.string(name),
@@ -173,7 +173,12 @@ export class Sas {
   async getAttestation(id: string): Promise<Attestation> {
     const response = await this.client.getObject({
       id: id,
-      options: { showContent: true, showType: true },
+      options: { 
+        showContent: true, 
+        showType: true ,
+        showOwner: true,
+        showPreviousTransaction: true
+      },
     });
   
     if (response.error) {
@@ -201,12 +206,14 @@ export class Sas {
       schema: fields.schema,
       ref_attestation: fields.ref_id,
       attester: fields.attester,
+      txHash: bs58.encode(fields.tx_hash),
       time: BigInt(fields.time),
       expiration_time: BigInt(fields.expireation_time),
       data: data,
       name: fields.name,
       description: fields.description,
-      url: fields.url
+      url: fields.url,
+      owner: response.data?.owner || null,
     };
   }
 }

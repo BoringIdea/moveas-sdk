@@ -32,6 +32,10 @@ export class Codec {
     });
   }
 
+  public schemaItem(): SchemaField[] {
+    return this.schema;
+  }
+
   encode(item: SchemaItem): string {
     const encodedFields = this.schema.map(field => ({
       name: field.name,
