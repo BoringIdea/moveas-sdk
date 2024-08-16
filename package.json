@@ -5,7 +5,7 @@
   "repository": "git@github.com:lukema95/sas-sdk.git",
   "author": "Luke Ma <lukema95@gmail.com>",
   "license": "MIT",
-  "type": "./dist/index.d.ts",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@mysten/sui": "^1.4.0",
+    "@mysten/bcs": "^1.0.3",
     "dotenv": "^16.4.5"
   }
 }
