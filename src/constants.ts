@@ -1,17 +1,17 @@
 export const PACKAGES = {
   mainnet: {
-    PackageID: '0x97068ec9bd970bd26911949503bdd4dfabc0e04f825ea847ecb5b689dc887130',
-    SchemaRegistryID: '0xd95dd9f4a95d3bfc769e6d49534fc1a85c0780d97ebbf123f9c89d9db29ec267',
-    AttestationRegistryID: '0x05bb34f4abc70f827365d335d3871de20f17dd14297cb9be9c7659cd97529a6f'
+    PackageID: '0xc592f2f5254405ef57fca7c12221dc0162f4fdb895cc6ec5f0d44248d60c2221',
+    SchemaRegistryID: '0xa39125cc0a82a0d752b98c538056150d1be01ed1a8bf9a41486239800658fbbf',
+    AttestationRegistryID: '0xc014a504eb742273aa71858db3300793cc105b54148cddcd679b274f17ed806e'
   },
   testnet: {
-    PackageID: '0x97068ec9bd970bd26911949503bdd4dfabc0e04f825ea847ecb5b689dc887130',
-    SchemaRegistryID: '0xd95dd9f4a95d3bfc769e6d49534fc1a85c0780d97ebbf123f9c89d9db29ec267',
-    AttestationRegistryID: '0x05bb34f4abc70f827365d335d3871de20f17dd14297cb9be9c7659cd97529a6f'
+    PackageID: '0xc592f2f5254405ef57fca7c12221dc0162f4fdb895cc6ec5f0d44248d60c2221',
+    SchemaRegistryID: '0xa39125cc0a82a0d752b98c538056150d1be01ed1a8bf9a41486239800658fbbf',
+    AttestationRegistryID: '0xc014a504eb742273aa71858db3300793cc105b54148cddcd679b274f17ed806e'
   },
   devnet: {
-    PackageID: '0x97068ec9bd970bd26911949503bdd4dfabc0e04f825ea847ecb5b689dc887130',
-    SchemaRegistryID: '0xd95dd9f4a95d3bfc769e6d49534fc1a85c0780d97ebbf123f9c89d9db29ec267',
-    AttestationRegistryID: '0x05bb34f4abc70f827365d335d3871de20f17dd14297cb9be9c7659cd97529a6f'
+    PackageID: '0xc592f2f5254405ef57fca7c12221dc0162f4fdb895cc6ec5f0d44248d60c2221',
+    SchemaRegistryID: '0xa39125cc0a82a0d752b98c538056150d1be01ed1a8bf9a41486239800658fbbf',
+    AttestationRegistryID: '0xc014a504eb742273aa71858db3300793cc105b54148cddcd679b274f17ed806e'
   },
 }

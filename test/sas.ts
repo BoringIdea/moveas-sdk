@@ -15,7 +15,7 @@ async function main() {
   const encodedItem = schemaCodec.encodeToBytes(item);
 
   const result = await sas.attest(
-    '0x2713cba8a4d550d3f4f69cc64e8d2193677b3ef3765224b865fa0f4b2850f175',
+    '0x200d78c1aeb493ff502322146c73de99774f576e2fa2c58cb89343e38c45a8af',
     '0x0',
     keypair.toSuiAddress(),
     BigInt(Date.now() + 1000 * 60 * 60 * 24),

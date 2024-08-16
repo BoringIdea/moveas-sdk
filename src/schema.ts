@@ -54,8 +54,6 @@ export class Schema {
       ],
     });
 
-    tx.transferObjects([record], this.signer.toSuiAddress());
-
     const result = await this.client.signAndExecuteTransaction({
       signer: this.signer,
       transaction: tx,
