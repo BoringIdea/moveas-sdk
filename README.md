@@ -32,8 +32,7 @@ yarn add @lukema/mas-sdk
 
 ```typescript
 import { bcs } from '@mysten/bcs';
-import { getKeypair } from 'mas-sdk/src/utils';
-import { Schema } from 'mas-sdk/src/schema';
+import { getKeypair, Schema } from '@lukema/mas-sdk';
 
 async function main() {
   const keypair = getKeypair();
@@ -54,9 +53,7 @@ async function main() {
 ### Create an Attestation
 
 ```typescript
-import { Sas } from 'mas-sdk/src/sas';
-import { Codec } from 'mas-sdk/src/codec';
-import { getKeypair } from 'mas-sdk/src/utils';
+import { Sas, Codec, getKeypair } from '@lukema/mas-sdk';
 
 async function main() {
   const keypair = getKeypair();
