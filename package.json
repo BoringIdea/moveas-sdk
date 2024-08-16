@@ -2,7 +2,7 @@
   "name": "mas-sdk",
   "version": "0.0.1-beta.1",
   "main": "./dist/index.js",
-  "repository": "git@github.com:lukema95/sas-sdk.git",
+  "repository": "git@github.com:lukema95/mas-sdk.git",
   "author": "Luke Ma <lukema95@gmail.com>",
   "license": "MIT",
   "types": "./dist/index.d.ts",
