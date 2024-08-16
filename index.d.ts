@@ -1,1 +1,1 @@
-declare module 'sas-sdk';
+declare module 'mas-sdk';
