@@ -1,6 +1,6 @@
 {
   "name": "mas-sdk",
-  "version": "1.0.0",
+  "version": "0.0.1-beta.1",
   "main": "./dist/index.js",
   "repository": "git@github.com:lukema95/sas-sdk.git",
   "author": "Luke Ma <lukema95@gmail.com>",
