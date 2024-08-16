@@ -18,12 +18,12 @@ MAS SDK (Move Attestation Service SDK) is a TypeScript library designed to inter
 Install MAS SDK using npm:
 
 ```
-npm install mas-sdk
+npm install @lukema/mas-sdk
 ```
 
 using yarn:
 ```
-yarn add mas-sdk
+yarn add @lukema/mas-sdk
 ```
 
 ## Examples
