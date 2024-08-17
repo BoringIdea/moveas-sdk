@@ -15,7 +15,7 @@ async function main() {
   const encodedItem = schemaCodec.encodeToBytes(item);
 
   const result = await sas.attest(
-    '0x200d78c1aeb493ff502322146c73de99774f576e2fa2c58cb89343e38c45a8af',
+    '0xca3363e113489c1ff4d24bac8a21921716b3b05bd68db17e00344014e4f42917',
     '0x0',
     keypair.toSuiAddress(),
     BigInt(Date.now() + 1000 * 60 * 60 * 24),
@@ -36,9 +36,6 @@ async function main() {
     const decodedItem = schemaCodec.decodeFromBytes(attestation.data);
     console.log('decode attestation data:', decodedItem);
   }
-
-  // const attestation = await sas.getAttestation('0x004c2df97b728d8e434e458332320c91e595d73222c6d432e1f64c06213651f6');
-  // console.log('attestation:', attestation);
 }
 
 main().catch(

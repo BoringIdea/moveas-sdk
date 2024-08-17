@@ -13,7 +13,7 @@ import bs58 from 'bs58';
 export interface SchemaRecord {
   id: SuiAddress;
   incrementId: number;
-  attestationCnt?: number | 0;
+  attestationCnt: number | 0;
   schema: Uint8Array;
   revokable: boolean;
   resolver: any | null;
@@ -241,6 +241,7 @@ export class Schema {
       createdAt: fields.created_at,
       txHash:  bs58.encode(fields.tx_hash),
       owner: response.data?.owner || null,
+      attestationCnt: fields.attestation_cnt,
     };
   }
 }
