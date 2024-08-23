@@ -60,6 +60,8 @@ export class Sas {
   ): Promise<SuiTransactionBlockResponse> {
     const registryId = getAttestationRegistryId(this.network);
     const tx = new Transaction();
+
+    tx.setGasBudget(10000000)
     
     tx.moveCall({
       target: `${this.packageId}::sas::attest`,
@@ -135,85 +137,95 @@ export class Sas {
   }
 
   async getAttestationRegistry(): Promise<AttestationRegistry> {
-    const registryId = getAttestationRegistryId(this.network);
-    const response = await this.client.getObject({
-      id: registryId,
-      options: { showContent: true, showType: true },
-    });
-
-    if (response.error) {
-      throw new Error(`Failed to fetch object: ${response.error}`);
-    }
-
-    const object = response.data;
-    if (!object || !object.content || object.content.dataType !== 'moveObject') {
-      throw new Error('Invalid object data');
-    }
-
-    const fields = object.content.fields as any;
-
-    const attestations = new Map<string, Status>();
-    if (fields && fields.attestations && fields.attestations.fields && fields.attestations.fields.contents) {
-      for (const item of fields.attestations.fields.contents) {
-        if (item.fields.key && item.fields.value) {
-          attestations.set(item.fields.key, {
-            is_revoked: item.fields.value.fields.is_revoked,
-            timestamp: item.fields.value.fields.timestamp
-          });
-        }
-      }
-    }
-
-    return {
-      id: object.objectId,
-      attestations: attestations
-    };
+    return getAttestationRegistry(this.network);
   }
   
   async getAttestation(id: string): Promise<Attestation> {
-    const response = await this.client.getObject({
-      id: id,
-      options: { 
-        showContent: true, 
-        showType: true ,
-        showOwner: true,
-        showPreviousTransaction: true
-      },
-    });
-  
-    if (response.error) {
-      throw new Error(`Failed to fetch object: ${response.error}`);
-    }
-  
-    const object = response.data;
-    if (!object || !object.content || object.content.dataType !== 'moveObject') {
-      throw new Error('Invalid object data');
-    }
-  
-    const fields = object.content.fields as any;
-  
-    let data: Uint8Array;
-    if (typeof fields.data === 'string') {
-      data = Uint8Array.from(atob(fields.data), c => c.charCodeAt(0));
-    } else if (Array.isArray(fields.data)) {
-      data = new Uint8Array(fields.data);
-    } else {
-      throw new Error('Invalid data format');
-    }
-  
-    return {
-      id: object.objectId,
-      schema: fields.schema,
-      ref_attestation: fields.ref_id,
-      attester: fields.attester,
-      txHash: bs58.encode(fields.tx_hash),
-      time: BigInt(fields.time),
-      expiration_time: BigInt(fields.expireation_time),
-      data: data,
-      name: fields.name,
-      description: fields.description,
-      url: fields.url,
-      owner: response.data?.owner || null,
-    };
+    return getAttestation(id, this.network);
   }
+}
+
+export async function getAttestationRegistry(network: Network): Promise<AttestationRegistry> {
+  const client = getClient(network);
+  const registryId = getAttestationRegistryId(network);
+  const response = await client.getObject({
+    id: registryId,
+    options: { showContent: true, showType: true },
+  });
+
+  if (response.error) {
+    throw new Error(`Failed to fetch object: ${response.error}`);
+  }
+
+  const object = response.data;
+  if (!object || !object.content || object.content.dataType !== 'moveObject') {
+    throw new Error('Invalid object data');
+  }
+
+  const fields = object.content.fields as any;
+
+  const attestations = new Map<string, Status>();
+  if (fields && fields.attestations && fields.attestations.fields && fields.attestations.fields.contents) {
+    for (const item of fields.attestations.fields.contents) {
+      if (item.fields.key && item.fields.value) {
+        attestations.set(item.fields.key, {
+          is_revoked: item.fields.value.fields.is_revoked,
+          timestamp: item.fields.value.fields.timestamp
+        });
+      }
+    }
+  }
+
+  return {
+    id: object.objectId,
+    attestations: attestations
+  };
+}
+
+export async function getAttestation(id: string, network: Network): Promise<Attestation> {
+  const client = getClient(network);
+  const response = await client.getObject({
+    id: id,
+    options: { 
+      showContent: true, 
+      showType: true ,
+      showOwner: true,
+      showPreviousTransaction: true
+    },
+  });
+
+  if (response.error) {
+    throw new Error(`Failed to fetch object: ${response.error}`);
+  }
+
+  const object = response.data;
+  if (!object || !object.content || object.content.dataType !== 'moveObject') {
+    throw new Error('Invalid object data');
+  }
+
+  const fields = object.content.fields as any;
+
+  let data: Uint8Array;
+  if (typeof fields.data === 'string') {
+    data = Uint8Array.from(atob(fields.data), c => c.charCodeAt(0));
+  } else if (Array.isArray(fields.data)) {
+    data = new Uint8Array(fields.data);
+  } else {
+    throw new Error('Invalid data format');
+  }
+
+  return {
+    id: object.objectId,
+    schema: fields.schema,
+    ref_attestation: fields.ref_id,
+    attester: fields.attester,
+    txHash: bs58.encode(fields.tx_hash),
+    time: BigInt(fields.time),
+    expiration_time: BigInt(fields.expireation_time),
+    data: data,
+    name: fields.name,
+    description: fields.description,
+    url: fields.url,
+    owner: response.data?.owner || null,
+  };
 }

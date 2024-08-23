@@ -4,7 +4,7 @@ import { getKeypair } from '../src/utils';
 
 async function main() {
   const keypair = getKeypair();
-  const sas = new Sas('testnet', keypair);
+  const sas = new Sas('movement', keypair);
 
   const schemaCodec = new Codec('name: string, age: u64');
 
@@ -15,7 +15,7 @@ async function main() {
   const encodedItem = schemaCodec.encodeToBytes(item);
 
   const result = await sas.attest(
-    '0xca3363e113489c1ff4d24bac8a21921716b3b05bd68db17e00344014e4f42917',
+    '0x5a797731b8f19dda9d6c6d649f1224e2bc69ff57b49b48b99dfbfc3b45d245e0',
     '0x0',
     keypair.toSuiAddress(),
     BigInt(Date.now() + 1000 * 60 * 60 * 24),

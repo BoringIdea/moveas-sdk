@@ -54,6 +54,8 @@ export class Schema {
       ],
     });
 
+    tx.setGasBudget(10000000)
+
     const result = await this.client.signAndExecuteTransaction({
       signer: this.signer,
       transaction: tx,
@@ -159,90 +161,101 @@ export class Schema {
   }
 
   async getSchemaRegistry(): Promise<SchemaRegistry> {
-    const schemaRegistryId = getSchemaRegistryId(this.network);
-    const response = await this.client.getObject({
-      id: schemaRegistryId,
-      options: { showContent: true, showType: true },
-    });
-
-    if (response.error) {
-      throw new Error(`Failed to fetch object: ${response.error}`);
-    }
-
-    const object = response.data;
-    if (!object || !object.content || object.content.dataType !== 'moveObject') {
-      throw new Error('Invalid object data');
-    }
-
-    const fields = object.content.fields as any;
-
-    const schemaRecords = new Map<string, string>();
-    if (fields && fields.schema_records && fields.schema_records.fields && fields.schema_records.fields.contents) {
-      for (const item of fields.schema_records.fields.contents) {
-        if (item.fields.key && item.fields.value) {
-          schemaRecords.set(item.fields.key, item.fields.key);
-        }
-      }
-    }
-
-    return {
-      id: object.objectId,
-      schema_records: schemaRecords
-    };
+    return await getSchemaRegistry(this.network);
   }
   
   async getSchemaRecord(id: string): Promise<SchemaRecord> {
-    const response = await this.client.getObject({
-      id: id,
-      options: { 
-        showContent: true, 
-        showType: true ,
-        showOwner: true,
-        showPreviousTransaction: true
-      },
-    });
-  
-    if (response.error) {
-      throw new Error(`Failed to fetch object: ${response.error}`);
-    }
-  
-    const object = response.data;
-    if (!object || !object.content || object.content.dataType !== 'moveObject') {
-      throw new Error('Invalid object data');
-    }
-  
-    const fields = object.content.fields as any;
-  
+    return await getSchemaRecord(id, this.network);
+  }
+}
 
-    let schema: Uint8Array;
-    if (typeof fields.schema === 'string') {
-      schema = Uint8Array.from(atob(fields.schema), c => c.charCodeAt(0));
-    } else if (Array.isArray(fields.schema)) {
-      schema = new Uint8Array(fields.schema);
-    } else {
-      throw new Error('Invalid schema format');
-    }
-    
-    let resolver: any | null = null;
-    if (fields.resolver && fields.resolver.fields) {
-      resolver = {
-        rules: fields.resolver.fields.rules,
-        config: fields.resolver.fields.config
-      };
-    }
+export async function getSchemaRecord(id: string, network: Network): Promise<SchemaRecord> {
+  const client = getClient(network);
+
+  const response = await client.getObject({
+    id: id,
+    options: { 
+      showContent: true, 
+      showType: true ,
+      showOwner: true,
+      showPreviousTransaction: true
+    },
+  });
+
+  if (response.error) {
+    throw new Error(`Failed to fetch object: ${response.error}`);
+  }
+
+  const object = response.data;
+  if (!object || !object.content || object.content.dataType !== 'moveObject') {
+    throw new Error('Invalid object data');
+  }
+
+  const fields = object.content.fields as any;
+
+
+  let schema: Uint8Array;
+  if (typeof fields.schema === 'string') {
+    schema = Uint8Array.from(atob(fields.schema), c => c.charCodeAt(0));
+  } else if (Array.isArray(fields.schema)) {
+    schema = new Uint8Array(fields.schema);
+  } else {
+    throw new Error('Invalid schema format');
+  }
   
-    return {
-      id: object.objectId,
-      schema: schema,
-      resolver: resolver,
-      incrementId: fields.incrementing_id,
-      creator: fields.creator,
-      revokable: fields.revokable,
-      createdAt: fields.created_at,
-      txHash:  bs58.encode(fields.tx_hash),
-      owner: response.data?.owner || null,
-      attestationCnt: fields.attestation_cnt,
+  let resolver: any | null = null;
+  if (fields.resolver && fields.resolver.fields) {
+    resolver = {
+      rules: fields.resolver.fields.rules,
+      config: fields.resolver.fields.config
     };
   }
+
+  return {
+    id: object.objectId,
+    schema: schema,
+    resolver: resolver,
+    incrementId: fields.incrementing_id,
+    creator: fields.creator,
+    revokable: fields.revokable,
+    createdAt: fields.created_at,
+    txHash:  bs58.encode(fields.tx_hash),
+    owner: response.data?.owner || null,
+    attestationCnt: fields.attestation_cnt,
+  };
+}
+
+export async function getSchemaRegistry(network: Network): Promise<SchemaRegistry> {
+  const client = getClient(network);
+  const schemaRegistryId = getSchemaRegistryId(network);
+  const response = await client.getObject({
+    id: schemaRegistryId,
+    options: { showContent: true, showType: true },
+  });
+
+  if (response.error) {
+    throw new Error(`Failed to fetch object: ${response.error}`);
+  }
+
+  const object = response.data;
+  if (!object || !object.content || object.content.dataType !== 'moveObject') {
+    throw new Error('Invalid object data');
+  }
+
+  const fields = object.content.fields as any;
+
+  const schemaRecords = new Map<string, string>();
+  if (fields && fields.schema_records && fields.schema_records.fields && fields.schema_records.fields.contents) {
+    for (const item of fields.schema_records.fields.contents) {
+      if (item.fields.key && item.fields.value) {
+        schemaRecords.set(item.fields.key, item.fields.key);
+      }
+    }
+  }
+
+  return {
+    id: object.objectId,
+    schema_records: schemaRecords
+  };
 }
 

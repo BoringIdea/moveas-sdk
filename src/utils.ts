@@ -6,10 +6,15 @@ import { PACKAGES } from "./constants";
 import dotenv from 'dotenv';
 dotenv.config();
 
-export type Network = 'mainnet' | 'testnet' | 'devnet' | 'localnet'
+export type Network = 'mainnet' | 'testnet' | 'devnet' | 'localnet' | 'movement'
 
 export function getClient(network: Network): SuiClient {
-  const rpcUrl = getFullnodeUrl(network);
+  let rpcUrl;
+  if (network != 'movement') {
+    rpcUrl = getFullnodeUrl(network);
+  } else {
+    rpcUrl = 'https://devnet.baku.movementlabs.xyz:443'
+  }
   return new SuiClient({ url: rpcUrl });
 }
 
@@ -29,6 +34,8 @@ export function getPackageId(network: Network): string {
       return PACKAGES.testnet.PackageID;
     case 'devnet':
       return PACKAGES.devnet.PackageID;
+    case 'movement':
+      return PACKAGES.movement.PackageID;
     default:
       throw new Error('Invalid network');
   }
@@ -42,6 +49,8 @@ export function getSchemaRegistryId(network: Network): string {
       return PACKAGES.testnet.SchemaRegistryID;
     case 'devnet':
       return PACKAGES.devnet.SchemaRegistryID;
+      case 'movement':
+      return PACKAGES.movement.SchemaRegistryID;
     default:
       throw new Error('Invalid network');
   }
@@ -55,6 +64,8 @@ export function getAttestationRegistryId(network: Network): string {
       return PACKAGES.testnet.AttestationRegistryID;
     case 'devnet':
       return PACKAGES.devnet.AttestationRegistryID;
+    case 'movement':
+      return PACKAGES.movement.AttestationRegistryID;
     default:
       throw new Error('Invalid network');
   }

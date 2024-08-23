@@ -1,6 +1,6 @@
 {
   "name": "@lukema/mas-sdk",
-  "version": "0.0.4-beta",
+  "version": "0.0.5-beta",
   "main": "./dist/index.js",
   "repository": "git@github.com:lukema95/mas-sdk.git",
   "publishConfig": {

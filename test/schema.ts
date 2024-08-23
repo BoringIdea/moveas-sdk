@@ -4,7 +4,7 @@ import { Schema } from '../src/schema';
 
 async function main() {
   const keypair = getKeypair();
-  const schema = new Schema('testnet', keypair);
+  const schema = new Schema('movement', keypair);
 
   const template = 'name: string, age: u64';
   const schemaItem = bcs.string().serialize(template).toBytes();
