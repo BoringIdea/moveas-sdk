@@ -75,6 +75,7 @@ export class Codec {
       case 'u8':
       case 'u16':
       case 'u32':
+        return Number(value);
       case 'u64':
       case 'u128':
       case 'u256':
