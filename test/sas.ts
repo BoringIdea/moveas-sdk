@@ -1,10 +1,15 @@
-import { Sas } from '../src/sas';
+import { Sas, getAttestations, getAttestationRegistryTable } from '../src/sas';
 import { Codec } from '../src/codec';
 import { getKeypair } from '../src/utils';
 
+const network = 'testnet';
+
 async function main() {
+  const attestationRegistryTableId = await getAttestationRegistryTable(network);
+  console.log('attestationRegistryTableId', attestationRegistryTableId);
+
   const keypair = getKeypair();
-  const sas = new Sas('movement', keypair);
+  const sas = new Sas(network, keypair);
 
   const schemaCodec = new Codec('name: string, age: u64');
 
@@ -15,7 +20,7 @@ async function main() {
   const encodedItem = schemaCodec.encodeToBytes(item);
 
   const result = await sas.attest(
-    '0x5a797731b8f19dda9d6c6d649f1224e2bc69ff57b49b48b99dfbfc3b45d245e0',
+    '0x62b91dae16766bf065765aefd44ecb9074f7183db23fecd8b6c7f26a3f281ee5',
     '0x0',
     keypair.toSuiAddress(),
     BigInt(Date.now() + 1000 * 60 * 60 * 24),
@@ -24,18 +29,10 @@ async function main() {
     'sui attest',
     'wwww.google.com'
   );
-  console.log('result:', result);
+  console.log('New attestation result:', result);
 
-  const attestationRegistry = await sas.getAttestationRegistry();
-  console.log('attestationRegistry:', attestationRegistry);
-
-  for (const [key, _] of attestationRegistry.attestations) {
-    const attestation = await sas.getAttestation(key);
-    console.log('attestation:', attestation);
-
-    const decodedItem = schemaCodec.decodeFromBytes(attestation.data);
-    console.log('decode attestation data:', decodedItem);
-  }
+  const attestations = await getAttestations(network);
+  console.log('Attestations:', attestations);
 }
 
 main().catch(

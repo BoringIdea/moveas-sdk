@@ -26,12 +26,9 @@ export class AdvancedQueries {
   async getEnhancedSchemaRecord(schemaId: string): Promise<EnhancedSchemaRecord> {
     const schemaRecord = await this.schema.getSchemaRecord(schemaId);
 
-    const schemaRegistry = await this.schema.getSchemaRegistry();
-    const creator = schemaRegistry.schema_records.get(schemaId) || null;
-
     const resolver = schemaRecord.resolver;
     if (resolver) {
-      
+      // TODO
     }
     
     return {

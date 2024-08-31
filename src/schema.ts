@@ -1,13 +1,13 @@
-import { 
-  SuiClient, 
+import {
+  SuiClient,
   SuiTransactionBlockResponse
 } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
-import { bcs } from '@mysten/sui/bcs';
+import { bcs } from '@mysten/bcs';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { ObjectOwner } from '@mysten/sui/client';
-import { getClient, getPackageId, getSchemaRegistryId, getAttestationRegistryId, Network } from './utils';
-import { SuiAddress } from './types';
+import { getClient, getPackageId, getSchemaRegistryId, ZeroAddress, Address, Network, getSchemaRegistryTableId } from './utils';
+import { SuiAddress, Version } from './types';
 import bs58 from 'bs58';
 
 export interface SchemaRecord {
@@ -25,7 +25,7 @@ export interface SchemaRecord {
 
 export interface SchemaRegistry {
   id: SuiAddress;
-  schema_records: Map<SuiAddress, SuiAddress>;
+  version: Version;
 }
 
 export class Schema {
@@ -41,11 +41,12 @@ export class Schema {
     this.network = network;
   }
 
+  // Create a new schema
   public async new(schema: Uint8Array, revokable: boolean): Promise<SuiTransactionBlockResponse> {
     const schemaRegistryId = getSchemaRegistryId(this.network);
     const tx = new Transaction();
-    
-    const record = tx.moveCall({
+
+    const adminCap = tx.moveCall({
       target: `${this.packageId}::schema::new`,
       arguments: [
         tx.object(schemaRegistryId),
@@ -54,7 +55,7 @@ export class Schema {
       ],
     });
 
-    tx.setGasBudget(10000000)
+    tx.transferObjects([adminCap], this.signer.toSuiAddress());
 
     const result = await this.client.signAndExecuteTransaction({
       signer: this.signer,
@@ -69,11 +70,12 @@ export class Schema {
     });
   }
 
+  // Create a new schema with a resolver
   async newWithResolver(schema: Uint8Array): Promise<SuiTransactionBlockResponse> {
     const schemaRegistryId = getSchemaRegistryId(this.network);
     const tx = new Transaction();
-    
-    tx.moveCall({
+
+    const [resolverBuilder, adminCap] = tx.moveCall({
       target: `${this.packageId}::schema::new_with_resolver`,
       arguments: [
         tx.object(schemaRegistryId),
@@ -81,6 +83,8 @@ export class Schema {
       ],
     });
 
+    tx.transferObjects([resolverBuilder, adminCap], this.signer.toSuiAddress());
+
     const result = await this.client.signAndExecuteTransaction({
       signer: this.signer,
       transaction: tx,
@@ -94,13 +98,15 @@ export class Schema {
     });
   }
 
-  async newResolverBuilder(schemaAddress: string): Promise<SuiTransactionBlockResponse> {
+  // Create a new resolver builder
+  async newResolverBuilder(adminCap: string, schemaRecord: string): Promise<SuiTransactionBlockResponse> {
     const tx = new Transaction();
-    
+
     tx.moveCall({
       target: `${this.packageId}::schema::new_resolver_builder`,
       arguments: [
-        bcs.string().serialize(schemaAddress),
+        tx.object(adminCap),
+        bcs.string().serialize(schemaRecord),
       ],
     });
 
@@ -112,7 +118,7 @@ export class Schema {
 
   async addResolver(schemaRecord: string, resolverBuilder: string): Promise<SuiTransactionBlockResponse> {
     const tx = new Transaction();
-    
+
     tx.moveCall({
       target: `${this.packageId}::schema::add_resolver`,
       arguments: [
@@ -127,9 +133,28 @@ export class Schema {
     });
   }
 
+  async newRequest(schemaRecord: string, name: string): Promise<SuiTransactionBlockResponse> {
+    const tx = new Transaction();
+
+    const request = tx.moveCall({
+      target: `${this.packageId}::schema::new_request`,
+      arguments: [
+        tx.object(schemaRecord),
+        bcs.string().serialize(name),
+      ],
+    });
+
+    tx.transferObjects([request], this.signer.toSuiAddress());
+
+    return await this.client.signAndExecuteTransaction({
+      signer: this.signer,
+      transaction: tx,
+    });
+  }
+
   async startAttest(schemaRecord: string): Promise<SuiTransactionBlockResponse> {
     const tx = new Transaction();
-    
+
     tx.moveCall({
       target: `${this.packageId}::schema::start_attest`,
       arguments: [
@@ -145,7 +170,7 @@ export class Schema {
 
   async finishAttest(schemaRecord: string, request: string): Promise<SuiTransactionBlockResponse> {
     const tx = new Transaction();
-    
+
     tx.moveCall({
       target: `${this.packageId}::schema::finish_attest`,
       arguments: [
@@ -163,7 +188,7 @@ export class Schema {
   async getSchemaRegistry(): Promise<SchemaRegistry> {
     return await getSchemaRegistry(this.network);
   }
-  
+
   async getSchemaRecord(id: string): Promise<SchemaRecord> {
     return await getSchemaRecord(id, this.network);
   }
@@ -174,9 +199,9 @@ export async function getSchemaRecord(id: string, network: Network): Promise<Sch
 
   const response = await client.getObject({
     id: id,
-    options: { 
-      showContent: true, 
-      showType: true ,
+    options: {
+      showContent: true,
+      showType: true,
       showOwner: true,
       showPreviousTransaction: true
     },
@@ -193,16 +218,6 @@ export async function getSchemaRecord(id: string, network: Network): Promise<Sch
 
   const fields = object.content.fields as any;
 
-
-  let schema: Uint8Array;
-  if (typeof fields.schema === 'string') {
-    schema = Uint8Array.from(atob(fields.schema), c => c.charCodeAt(0));
-  } else if (Array.isArray(fields.schema)) {
-    schema = new Uint8Array(fields.schema);
-  } else {
-    throw new Error('Invalid schema format');
-  }
-  
   let resolver: any | null = null;
   if (fields.resolver && fields.resolver.fields) {
     resolver = {
@@ -213,13 +228,13 @@ export async function getSchemaRecord(id: string, network: Network): Promise<Sch
 
   return {
     id: object.objectId,
-    schema: schema,
+    schema: new Uint8Array(fields.schema),
     resolver: resolver,
     incrementId: fields.incrementing_id,
     creator: fields.creator,
     revokable: fields.revokable,
     createdAt: fields.created_at,
-    txHash:  bs58.encode(fields.tx_hash),
+    txHash: bs58.encode(fields.tx_hash),
     owner: response.data?.owner || null,
     attestationCnt: fields.attestation_cnt,
   };
@@ -237,25 +252,57 @@ export async function getSchemaRegistry(network: Network): Promise<SchemaRegistr
     throw new Error(`Failed to fetch object: ${response.error}`);
   }
 
-  const object = response.data;
-  if (!object || !object.content || object.content.dataType !== 'moveObject') {
-    throw new Error('Invalid object data');
-  }
-
+  const object = response.data as any;
   const fields = object.content.fields as any;
-
-  const schemaRecords = new Map<string, string>();
-  if (fields && fields.schema_records && fields.schema_records.fields && fields.schema_records.fields.contents) {
-    for (const item of fields.schema_records.fields.contents) {
-      if (item.fields.key && item.fields.value) {
-        schemaRecords.set(item.fields.key, item.fields.key);
-      }
-    }
-  }
 
   return {
     id: object.objectId,
-    schema_records: schemaRecords
+    version: {
+      id: fields.inner.fields.id.id,
+      version: fields.inner.fields.version,
+    },
   };
 }
 
+export async function getSchemas(network: Network): Promise<SchemaRecord[]> {
+  const client = getClient(network);
+
+  // Get the table id
+  const tableId = await getSchemaRegistryTableId(network);
+
+  // Get the table data
+  const tableData = await client.getDynamicFields({
+    parentId: tableId,
+  });
+
+  const schemaPromises = tableData.data.map(async (dataItem) => {
+    // Get the table item
+    const tableItem = await client.getObject({
+      id: dataItem.objectId,
+      options: { showContent: true, showType: true },
+    });
+
+    // key is the schema id
+    const schemaId = (tableItem.data?.content as any).fields.name;
+
+    // Get the schema record
+    return getSchemaRecord(schemaId, network);
+  });
+
+  const schemas = await Promise.all(schemaPromises);
+
+  return schemas;
+}
+
+export async function getSchemaRegistryTable(network: Network): Promise<string> {
+  const client = getClient(network);
+  const schemaRegistry = await getSchemaRegistry(network);
+  const res = await client.getDynamicFieldObject({
+    parentId: schemaRegistry.version.id,
+    name: {
+      type: 'u64',
+      value: schemaRegistry.version.version,
+    },
+  });
+  return (res.data?.content as any).fields.value.fields.schema_records.fields.id.id;
+}
