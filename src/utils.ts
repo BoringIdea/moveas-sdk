@@ -1,10 +1,18 @@
 import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
-import { fromHEX, bcs } from '@mysten/bcs';
+import { fromHEX, toHEX, bcs } from '@mysten/bcs';
 import { PACKAGES } from "./constants";
 
 import dotenv from 'dotenv';
 dotenv.config();
+
+export const Address = bcs.bytes(32).transform({
+	// To change the input type, you need to provide a type definition for the input
+	input: (val: string) => fromHEX(val),
+	output: (val) => toHEX(val),
+});
+
+export const ZeroAddress = Address.parse(new Uint8Array(32));
 
 export type Network = 'mainnet' | 'testnet' | 'devnet' | 'localnet' | 'movement'
 
@@ -66,6 +74,36 @@ export function getAttestationRegistryId(network: Network): string {
       return PACKAGES.devnet.AttestationRegistryID;
     case 'movement':
       return PACKAGES.movement.AttestationRegistryID;
+    default:
+      throw new Error('Invalid network');
+  }
+}
+
+export function getSchemaRegistryTableId(network: Network): string {
+  switch (network) {
+    case 'mainnet':
+      return PACKAGES.mainnet.SchemaRegistryTableID;
+    case 'testnet':
+      return PACKAGES.testnet.SchemaRegistryTableID;
+    case 'devnet':
+      return PACKAGES.devnet.SchemaRegistryTableID;
+    case 'movement':
+      return PACKAGES.movement.SchemaRegistryTableID;
+    default:
+      throw new Error('Invalid network');
+  }
+}
+
+export function getAttestationRegistryTableId(network: Network): string {
+  switch (network) {
+    case 'mainnet':
+      return PACKAGES.mainnet.AttestationRegistryTableID;
+    case 'testnet':
+      return PACKAGES.testnet.AttestationRegistryTableID;
+    case 'devnet':
+      return PACKAGES.devnet.AttestationRegistryTableID;
+    case 'movement':
+      return PACKAGES.movement.AttestationRegistryTableID;
     default:
       throw new Error('Invalid network');
   }

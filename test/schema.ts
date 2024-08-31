@@ -1,10 +1,16 @@
 import { bcs } from '@mysten/bcs';
 import { getKeypair } from '../src/utils';
-import { Schema } from '../src/schema';
+import { Schema, getSchemas } from '../src/schema';
+import {getSchemaRegistryTable} from '../src/schema'
+
+const network = 'testnet';
 
 async function main() {
+  const schemaRegistryTableId = await getSchemaRegistryTable(network);
+  console.log('schemaRegistryTableId', schemaRegistryTableId);
+
   const keypair = getKeypair();
-  const schema = new Schema('movement', keypair);
+  const schema = new Schema(network, keypair);
 
   const template = 'name: string, age: u64';
   const schemaItem = bcs.string().serialize(template).toBytes();
@@ -13,21 +19,16 @@ async function main() {
     new Uint8Array(schemaItem),
     false
   );
-  console.log('res:', res);
+  console.log('New schema result:', res);
 
-  const registry = await schema.getSchemaRegistry();
-  console.log('registry:', registry);
-
-  for (const [key, _] of registry.schema_records) {
-    const schemaRecord = await schema.getSchemaRecord(key);
-    console.log('schemaRecord:', schemaRecord);
-
-    const decodedSchema = bcs.string().parse(schemaRecord.schema);
-    console.log('decodedSchema:', decodedSchema);
+  for (const created of res.effects?.created || []) {
+    if (typeof created.owner === 'object' && 'Shared' in created.owner) {
+      console.log('Create Schema:', created.reference.objectId);
+    }
   }
 
-  // const schemaRecord = await schema.getSchemaRecord('0x7a34aff1914b8ff425b789900da346fa890f3e835aeea54786bef944ef77c5b8');
-  // console.log('schemaRecord:', schemaRecord);
+  const schemas = await getSchemas(network);
+  console.log('Schemas:', schemas);
 }
 
 main().catch(

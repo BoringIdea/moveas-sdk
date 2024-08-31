@@ -1,13 +1,13 @@
-import { 
-  SuiClient, 
+import {
+  SuiClient,
   SuiTransactionBlockResponse
 } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { SUI_CLOCK_OBJECT_ID } from '@mysten/sui/utils';
 import { ObjectOwner } from '@mysten/sui/client'
-import { getAttestationRegistryId, getClient, getPackageId, Network } from './utils';
-import { SuiAddress } from './types';
+import { getAttestationRegistryId, getClient, getPackageId, Network, ZeroAddress, Address, getAttestationRegistryTableId } from './utils';
+import { SuiAddress, Version } from './types';
 import bs58 from 'bs58';
 
 export interface Attestation {
@@ -17,6 +17,7 @@ export interface Attestation {
   attester: SuiAddress;
   txHash: string;
   time: bigint;
+  revokable: boolean;
   expiration_time: bigint;
   data: Uint8Array;
   name: string;
@@ -32,7 +33,7 @@ export interface Status {
 
 export interface AttestationRegistry {
   id: string;
-  attestations: Map<SuiAddress, Status>;
+  version: Version;
 }
 
 export class Sas {
@@ -61,8 +62,6 @@ export class Sas {
     const registryId = getAttestationRegistryId(this.network);
     const tx = new Transaction();
 
-    tx.setGasBudget(10000000)
-    
     tx.moveCall({
       target: `${this.packageId}::sas::attest`,
       arguments: [
@@ -70,7 +69,7 @@ export class Sas {
         tx.object(registryId),
         tx.pure.address(refAttestationId),
         tx.pure.address(recipient),
-        tx.pure.u64(expirationTime), 
+        tx.pure.u64(expirationTime),
         tx.pure.vector('u8', data),
         tx.pure.string(name),
         tx.pure.string(description),
@@ -105,7 +104,7 @@ export class Sas {
   ): Promise<SuiTransactionBlockResponse> {
     const registryId = getAttestationRegistryId(this.network);
     const tx = new Transaction();
-    
+
     tx.moveCall({
       target: `${this.packageId}::sas::attest_with_resolver`,
       arguments: [
@@ -113,7 +112,7 @@ export class Sas {
         tx.object(registryId),
         tx.pure.address(refAttestationId),
         tx.pure.address(recipient),
-        tx.pure.u64(expirationTime), 
+        tx.pure.u64(expirationTime),
         tx.pure.vector('u8', data),
         tx.pure.string(name),
         tx.pure.string(description),
@@ -139,7 +138,7 @@ export class Sas {
   async getAttestationRegistry(): Promise<AttestationRegistry> {
     return getAttestationRegistry(this.network);
   }
-  
+
   async getAttestation(id: string): Promise<Attestation> {
     return getAttestation(id, this.network);
   }
@@ -157,28 +156,15 @@ export async function getAttestationRegistry(network: Network): Promise<Attestat
     throw new Error(`Failed to fetch object: ${response.error}`);
   }
 
-  const object = response.data;
-  if (!object || !object.content || object.content.dataType !== 'moveObject') {
-    throw new Error('Invalid object data');
-  }
-
+  const object = response.data as any;
   const fields = object.content.fields as any;
-
-  const attestations = new Map<string, Status>();
-  if (fields && fields.attestations && fields.attestations.fields && fields.attestations.fields.contents) {
-    for (const item of fields.attestations.fields.contents) {
-      if (item.fields.key && item.fields.value) {
-        attestations.set(item.fields.key, {
-          is_revoked: item.fields.value.fields.is_revoked,
-          timestamp: item.fields.value.fields.timestamp
-        });
-      }
-    }
-  }
 
   return {
     id: object.objectId,
-    attestations: attestations
+    version: {
+      id: fields.inner.fields.id.id,
+      version: fields.inner.fields.version,
+    },
   };
 }
 
@@ -186,9 +172,9 @@ export async function getAttestation(id: string, network: Network): Promise<Atte
   const client = getClient(network);
   const response = await client.getObject({
     id: id,
-    options: { 
-      showContent: true, 
-      showType: true ,
+    options: {
+      showContent: true,
+      showType: true,
       showOwner: true,
       showPreviousTransaction: true
     },
@@ -222,10 +208,53 @@ export async function getAttestation(id: string, network: Network): Promise<Atte
     txHash: bs58.encode(fields.tx_hash),
     time: BigInt(fields.time),
     expiration_time: BigInt(fields.expireation_time),
+    revokable: fields.revokable,
     data: data,
     name: fields.name,
     description: fields.description,
     url: fields.url,
     owner: response.data?.owner || null,
   };
+}
+
+export async function getAttestations(network: Network): Promise<Attestation[]> {
+  const client = getClient(network);
+
+  // Get the table id
+  const tableId = await getAttestationRegistryTableId(network);
+
+  // Get the table data
+  const tableData = await client.getDynamicFields({
+    parentId: tableId,
+  });
+
+  const attestationPromises = tableData.data.map(async (dataItem) => {
+    // Get the table item
+    const tableItem = await client.getObject({
+      id: dataItem.objectId,
+      options: { showContent: true, showType: true },
+    });
+
+    // key is the attestation id
+    const attestationId = (tableItem.data?.content as any).fields.name;
+
+    return getAttestation(attestationId, network);
+  });
+
+  const attestations = await Promise.all(attestationPromises);
+
+  return attestations;
+}
+
+export async function getAttestationRegistryTable(network: Network): Promise<string> {
+  const client = getClient(network);
+  const schemaRegistry = await getAttestationRegistry(network);
+  const res = await client.getDynamicFieldObject({
+    parentId: schemaRegistry.version.id,
+    name: {
+      type: 'u64',
+      value: schemaRegistry.version.version,
+    },
+  });
+  return (res.data?.content as any).fields.value.fields.attestations_status.fields.id.id;
 }
