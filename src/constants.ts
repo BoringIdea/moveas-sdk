@@ -1,30 +1,30 @@
 export const PACKAGES = {
   mainnet: {
-    PackageID: '0xdfe581a6ca6cf1f88ee7f4c9e586a68ce5a0d51a74963201990c9308d8356a8c',
-    SchemaRegistryID: '0x8c2ca0d4ee6963330d538955f92df9a1bbad8c15834edcfeb908f10315dc8376',
-    AttestationRegistryID: '0xda0b732edadec7aa56b07232f40d7284115ba65357b9498f88cbd8f810458484',
-    SchemaRegistryTableID: '0x8885d6b9e365e7aa9085406cd1330ab60c38a98c1930616ed8e1438c2ae9b5ed',
-    AttestationRegistryTableID: '0x8885d6b9e365e7aa9085406cd1330ab60c38a98c1930616ed8e1438c2ae9b5ed'
+    PackageID: '',
+    SchemaRegistryID: '',
+    AttestationRegistryID: '',
+    SchemaRegistryTableID: '',
+    AttestationRegistryTableID: ''
   },
   testnet: {
-    PackageID: '0x6d2ad02c3013a6222d079cf68a958fcb1c666af01d07ab185d42fd2f4c0a16c0',
-    SchemaRegistryID: '0xdb5255f0dfa8c5fb747f9a4b09985af819710257a5a658dd33487d4dc0ea0f44',
-    AttestationRegistryID: '0xb01bb225fa2b62bd10ea37f90437844e577aa858e055152a88b0e11fe4806cc6',
-    SchemaRegistryTableID: '0x446f4a1c26991da95127bad447f86eb1220fd0d4bdd4077f1f2cae4aee00d610',
-    AttestationRegistryTableID: '0xba7814c0cef10d8bc17d3ffe05efff9bcf20d141bea33564edbc77886ff1c390'
+    PackageID: '0xf5a69b4d4d19f22cfe4b174dd3d2ea878c914b7acccd6acfdab9f27771b2842f',
+    SchemaRegistryID: '0x65a27c4204e7bac80ed28d71ae4396df28490aa07fd418e93e4bab6c305d9b00',
+    AttestationRegistryID: '0x78e64303a074ecfb6cfd193895cdef922db8ad2ad92799004cd8c45cc26f4fcb',
+    SchemaRegistryTableID: '0x61e56b188fe93841ebc498f4ed8356ef72217ccb5e945d625aebe971268fa2f1',
+    AttestationRegistryTableID: '0x5a7c5670d5f12a0b6d1493ab2658a5266bf5dbe423e86c4d6b6d9eab065358a8'
   },
   devnet: {
-    PackageID: '0xdfe581a6ca6cf1f88ee7f4c9e586a68ce5a0d51a74963201990c9308d8356a8c',
-    SchemaRegistryID: '0x8c2ca0d4ee6963330d538955f92df9a1bbad8c15834edcfeb908f10315dc8376',
-    AttestationRegistryID: '0xda0b732edadec7aa56b07232f40d7284115ba65357b9498f88cbd8f810458484',
-    SchemaRegistryTableID: '0x8885d6b9e365e7aa9085406cd1330ab60c38a98c1930616ed8e1438c2ae9b5ed',
-    AttestationRegistryTableID: '0x8885d6b9e365e7aa9085406cd1330ab60c38a98c1930616ed8e1438c2ae9b5ed'
+    PackageID: '',
+    SchemaRegistryID: '',
+    AttestationRegistryID: '',
+    SchemaRegistryTableID: '',
+    AttestationRegistryTableID: ''
   },
   movement: {
-    PackageID: '0x75481c69a5d1b1461968ca354f5543327c69ba1ca42624e0f4b8ebb44ec74e55',
-    SchemaRegistryID: '0x8885d6b9e365e7aa9085406cd1330ab60c38a98c1930616ed8e1438c2ae9b5ed',
-    AttestationRegistryID: '0xf517e95911e5730aecf5200579b5f81f69fec51edf55a7af6c1e2cd8078fe583',
-    SchemaRegistryTableID: '0x8885d6b9e365e7aa9085406cd1330ab60c38a98c1930616ed8e1438c2ae9b5ed',
-    AttestationRegistryTableID: '0x8885d6b9e365e7aa9085406cd1330ab60c38a98c1930616ed8e1438c2ae9b5ed'
+    PackageID: '0x0951d9821cdaebee809e301527f27b66ce306520297000d5ec4e2910b1044ed6',
+    SchemaRegistryID: '0x3f4bde05a43f45e1b41789749e35f25f55369510b96063a333ea1e82817028f3',
+    AttestationRegistryID: '0x55d832bdafe9cb9e525416405b20addb7fc4b9ebf203a9c7936812bcef656d15',
+    SchemaRegistryTableID: '0x0e0ec969b171690ce4a0bb752b003c37768ef739e4c0040642e40291fa7e5715',
+    AttestationRegistryTableID: '0x7a5eacbbabd9ea3d4e867954dc7e5d4ce543ae82dca7377efc2a79e10de284ee'
   }
 }
