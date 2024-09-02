@@ -10,7 +10,7 @@ MAS SDK (Move Attestation Service SDK) is a TypeScript library designed to inter
 | Chain | Status |
 |----|----|
 | Sui | Testnet |
-| Movement | Comming soon |
+| Movement | Testnet |
 | Aptos | Comming soon |
 
 ## Installation
@@ -43,7 +43,8 @@ async function main() {
 
   const res = await schema.new(
     new Uint8Array(schemaItem),
-    false
+    "Test1",
+    true
   );
   console.log('res:', res);
 }
