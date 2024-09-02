@@ -20,16 +20,32 @@ async function main() {
   const encodedItem = schemaCodec.encodeToBytes(item);
 
   const result = await sas.attest(
-    '0x62b91dae16766bf065765aefd44ecb9074f7183db23fecd8b6c7f26a3f281ee5',
+    '0x3509efc36152754d02e0e047df64f037d7b203bf84e4934fdeb70b2aa27bc84f',  // schema id
     '0x0',
     keypair.toSuiAddress(),
     BigInt(Date.now() + 1000 * 60 * 60 * 24),
     encodedItem,
-    'test',
+    'Test1',
     'sui attest',
     'wwww.google.com'
   );
   console.log('New attestation result:', result);
+
+  let attestationId = '';
+  for (const createdObject of result.effects?.created || []) {
+    if (typeof createdObject.owner === 'object' && 'AddressOwner' in createdObject.owner) {
+      attestationId = createdObject.reference.objectId;
+      console.log('Created attestation:', createdObject.reference.objectId);
+    }
+  }
+
+  // revoke attestation
+  const revokeResult = await sas.revoke(
+    '0xad9f569fe536c20448684a8344abe4b087e86b9a04d7ef9a49ccf74d4f1bada6', // admin id
+    '0x3509efc36152754d02e0e047df64f037d7b203bf84e4934fdeb70b2aa27bc84f', // schema id
+    attestationId
+  );
+  console.log('Revoke attestation result:', revokeResult);
 
   const attestations = await getAttestations(network);
   console.log('Attestations:', attestations);

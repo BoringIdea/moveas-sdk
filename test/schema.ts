@@ -17,7 +17,8 @@ async function main() {
 
   const res = await schema.new(
     new Uint8Array(schemaItem),
-    false
+    'Test1',
+    true
   );
   console.log('New schema result:', res);
 

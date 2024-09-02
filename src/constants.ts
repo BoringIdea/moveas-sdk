@@ -7,11 +7,11 @@ export const PACKAGES = {
     AttestationRegistryTableID: ''
   },
   testnet: {
-    PackageID: '0xf5a69b4d4d19f22cfe4b174dd3d2ea878c914b7acccd6acfdab9f27771b2842f',
-    SchemaRegistryID: '0x65a27c4204e7bac80ed28d71ae4396df28490aa07fd418e93e4bab6c305d9b00',
-    AttestationRegistryID: '0x78e64303a074ecfb6cfd193895cdef922db8ad2ad92799004cd8c45cc26f4fcb',
-    SchemaRegistryTableID: '0x61e56b188fe93841ebc498f4ed8356ef72217ccb5e945d625aebe971268fa2f1',
-    AttestationRegistryTableID: '0x5a7c5670d5f12a0b6d1493ab2658a5266bf5dbe423e86c4d6b6d9eab065358a8'
+    PackageID: '0xac32e282fa811b017e26071f6d8ee200761c9966d6dc8c3fa7b6f05b7a3c92fe',
+    SchemaRegistryID: '0x2a2bf6847679b91feead0b6d353ddbbec739e61b96e933307ea19437fafa57f0',
+    AttestationRegistryID: '0xcdd9c4de7876309b88a6bde476fd45119913adeaea7a378d788dd581892e291a',
+    SchemaRegistryTableID: '0x6d95dc2f8c695cfb8e74a28319997498310bc8b4fe07e7b1b693ac04497b1194',
+    AttestationRegistryTableID: '0x9f31f855d5f593021e6ffaebb718fd6c2cce73c0c0d577b294e0d02b17a2c35c'
   },
   devnet: {
     PackageID: '',
@@ -21,10 +21,10 @@ export const PACKAGES = {
     AttestationRegistryTableID: ''
   },
   movement: {
-    PackageID: '0x0951d9821cdaebee809e301527f27b66ce306520297000d5ec4e2910b1044ed6',
-    SchemaRegistryID: '0x3f4bde05a43f45e1b41789749e35f25f55369510b96063a333ea1e82817028f3',
-    AttestationRegistryID: '0x55d832bdafe9cb9e525416405b20addb7fc4b9ebf203a9c7936812bcef656d15',
-    SchemaRegistryTableID: '0x0e0ec969b171690ce4a0bb752b003c37768ef739e4c0040642e40291fa7e5715',
-    AttestationRegistryTableID: '0x7a5eacbbabd9ea3d4e867954dc7e5d4ce543ae82dca7377efc2a79e10de284ee'
+    PackageID: '0xb77e02da62e9bba4833029ccf13aea70ac2904b3fc9c49f0e4b1c79b4b903cbd',
+    SchemaRegistryID: '0xe209827e3903536df59c068a00f7317d8454a630f5e10a40777b5d6d08a82a51',
+    AttestationRegistryID: '0xc05db494413700a2b31fec9761d56b35f3abbecfd401a88660186ada1c038d4f',
+    SchemaRegistryTableID: '0x53b7b199a8719fd0297d55f0637a5c58b020d95054348adb745acfd5fed433be',
+    AttestationRegistryTableID: '0xbab1012a6e9040f9dbb35f12f0ed70b905d38fcecf5f0c50a46b338e0977042d'
   }
 }

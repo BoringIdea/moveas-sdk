@@ -17,7 +17,8 @@ async function main() {
     const schemaItem = bcs.string().serialize(template.template).toBytes();
     const res = await schema.new(
       new Uint8Array(schemaItem),
-      false
+      template.name,
+      true
     );
     console.log(`Created schema template ${template.name}`, res);
     let schemaId = '';

@@ -14,6 +14,7 @@ export interface SchemaRecord {
   id: SuiAddress;
   incrementId: number;
   attestationCnt: number | 0;
+  label: string;
   schema: Uint8Array;
   revokable: boolean;
   resolver: any | null;
@@ -42,7 +43,7 @@ export class Schema {
   }
 
   // Create a new schema
-  public async new(schema: Uint8Array, revokable: boolean): Promise<SuiTransactionBlockResponse> {
+  public async new(schema: Uint8Array, label: string, revokable: boolean): Promise<SuiTransactionBlockResponse> {
     const schemaRegistryId = getSchemaRegistryId(this.network);
     const tx = new Transaction();
 
@@ -51,6 +52,7 @@ export class Schema {
       arguments: [
         tx.object(schemaRegistryId),
         tx.pure.vector('u8', schema),
+        tx.pure.string(label),
         tx.pure.bool(revokable)
       ],
     });
@@ -71,7 +73,7 @@ export class Schema {
   }
 
   // Create a new schema with a resolver
-  async newWithResolver(schema: Uint8Array): Promise<SuiTransactionBlockResponse> {
+  async newWithResolver(schema: Uint8Array, label: string, revokable: boolean): Promise<SuiTransactionBlockResponse> {
     const schemaRegistryId = getSchemaRegistryId(this.network);
     const tx = new Transaction();
 
@@ -80,6 +82,8 @@ export class Schema {
       arguments: [
         tx.object(schemaRegistryId),
         tx.pure.vector('u8', schema),
+        tx.pure.string(label),
+        tx.pure.bool(revokable)
       ],
     });
 
@@ -231,6 +235,7 @@ export async function getSchemaRecord(id: string, network: Network): Promise<Sch
     schema: new Uint8Array(fields.schema),
     resolver: resolver,
     incrementId: fields.incrementing_id,
+    label: fields.label,
     creator: fields.creator,
     revokable: fields.revokable,
     createdAt: fields.created_at,

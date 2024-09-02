@@ -6,7 +6,7 @@ import { Transaction } from '@mysten/sui/transactions';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { SUI_CLOCK_OBJECT_ID } from '@mysten/sui/utils';
 import { ObjectOwner } from '@mysten/sui/client'
-import { getAttestationRegistryId, getClient, getPackageId, Network, ZeroAddress, Address, getAttestationRegistryTableId } from './utils';
+import { getAttestationRegistryId, getClient, getPackageId, Network, getAttestationRegistryTableId } from './utils';
 import { SuiAddress, Version } from './types';
 import bs58 from 'bs58';
 
@@ -132,6 +132,27 @@ export class Sas {
       options: {
         showEffects: true,
       },
+    });
+  }
+
+  async revoke(adminId: string, schemaId: string, attestationId: string): Promise<SuiTransactionBlockResponse> {
+    const attestationRegistryId = getAttestationRegistryId(this.network);
+    
+    const tx = new Transaction();
+
+    tx.moveCall({
+      target: `${this.packageId}::attestation_registry::revoke`,
+      arguments: [
+        tx.object(adminId),
+        tx.object(attestationRegistryId),
+        tx.object(schemaId),
+        tx.object(attestationId),
+      ],
+    });
+
+    return await this.client.signAndExecuteTransaction({
+      signer: this.signer,
+      transaction: tx,
     });
   }
 
