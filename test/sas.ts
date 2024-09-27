@@ -3,13 +3,14 @@ import { Codec } from '../src/codec';
 import { getKeypair } from '../src/utils';
 
 const network = 'testnet';
+const chain = 'sui';
 
 async function main() {
-  const attestationRegistryTableId = await getAttestationRegistryTable(network);
+  const attestationRegistryTableId = await getAttestationRegistryTable(chain, network);
   console.log('attestationRegistryTableId', attestationRegistryTableId);
 
   const keypair = getKeypair();
-  const sas = new Sas(network, keypair);
+  const sas = new Sas(chain, network, keypair);
 
   const schemaCodec = new Codec('name: string, age: u64');
 
@@ -47,7 +48,7 @@ async function main() {
   );
   console.log('Revoke attestation result:', revokeResult);
 
-  const attestations = await getAttestations(network);
+  const attestations = await getAttestations(chain, network);
   console.log('Attestations:', attestations);
 }
 

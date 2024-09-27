@@ -16,11 +16,11 @@ export class AdvancedQueries {
   private sas: Sas;
   private client: SuiClient;
 
-  constructor(network: Network) {
+  constructor(chain: string, network: Network) {
     const signer = Ed25519Keypair.generate();
-    this.client = getClient(network);
-    this.schema = new Schema(network, signer);
-    this.sas = new Sas(network, signer);
+    this.client = getClient(chain, network);
+    this.schema = new Schema(chain, network, signer);
+    this.sas = new Sas(chain, network, signer);
   }
 
   async getEnhancedSchemaRecord(schemaId: string): Promise<EnhancedSchemaRecord> {

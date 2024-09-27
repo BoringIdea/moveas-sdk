@@ -34,17 +34,19 @@ export class Schema {
   private signer: Ed25519Keypair;
   private packageId: string;
   private network: Network;
+  private chain: string;
 
-  constructor(network: Network, signer: Ed25519Keypair) {
-    this.client = getClient(network);
+  constructor(chain: string, network: Network, signer: Ed25519Keypair) {
+    this.chain = chain;
+    this.client = getClient(chain, network);
     this.signer = signer;
-    this.packageId = getPackageId(network);
+    this.packageId = getPackageId(chain, network);
     this.network = network;
   }
 
   // Create a new schema
   public async new(schema: Uint8Array, label: string, revokable: boolean): Promise<SuiTransactionBlockResponse> {
-    const schemaRegistryId = getSchemaRegistryId(this.network);
+    const schemaRegistryId = getSchemaRegistryId(this.chain, this.network);
     const tx = new Transaction();
 
     const adminCap = tx.moveCall({
@@ -74,7 +76,7 @@ export class Schema {
 
   // Create a new schema with a resolver
   async newWithResolver(schema: Uint8Array, label: string, revokable: boolean): Promise<SuiTransactionBlockResponse> {
-    const schemaRegistryId = getSchemaRegistryId(this.network);
+    const schemaRegistryId = getSchemaRegistryId(this.chain, this.network);
     const tx = new Transaction();
 
     const [resolverBuilder, adminCap] = tx.moveCall({
@@ -190,16 +192,16 @@ export class Schema {
   }
 
   async getSchemaRegistry(): Promise<SchemaRegistry> {
-    return await getSchemaRegistry(this.network);
+    return await getSchemaRegistry(this.chain, this.network);
   }
 
   async getSchemaRecord(id: string): Promise<SchemaRecord> {
-    return await getSchemaRecord(id, this.network);
+    return await getSchemaRecord(id, this.chain, this.network);
   }
 }
 
-export async function getSchemaRecord(id: string, network: Network): Promise<SchemaRecord> {
-  const client = getClient(network);
+export async function getSchemaRecord(id: string, chain: string, network: Network): Promise<SchemaRecord> {
+  const client = getClient(chain, network);
 
   const response = await client.getObject({
     id: id,
@@ -245,9 +247,9 @@ export async function getSchemaRecord(id: string, network: Network): Promise<Sch
   };
 }
 
-export async function getSchemaRegistry(network: Network): Promise<SchemaRegistry> {
-  const client = getClient(network);
-  const schemaRegistryId = getSchemaRegistryId(network);
+export async function getSchemaRegistry(chain: string, network: Network): Promise<SchemaRegistry> {
+  const client = getClient(chain, network);
+  const schemaRegistryId = getSchemaRegistryId(chain, network);
   const response = await client.getObject({
     id: schemaRegistryId,
     options: { showContent: true, showType: true },
@@ -269,11 +271,11 @@ export async function getSchemaRegistry(network: Network): Promise<SchemaRegistr
   };
 }
 
-export async function getSchemas(network: Network): Promise<SchemaRecord[]> {
-  const client = getClient(network);
+export async function getSchemas(chain: string, network: Network): Promise<SchemaRecord[]> {
+  const client = getClient(chain, network);
 
   // Get the table id
-  const tableId = await getSchemaRegistryTableId(network);
+  const tableId = await getSchemaRegistryTableId(chain, network);
 
   // Get the table data
   const tableData = await client.getDynamicFields({
@@ -291,7 +293,7 @@ export async function getSchemas(network: Network): Promise<SchemaRecord[]> {
     const schemaId = (tableItem.data?.content as any).fields.name;
 
     // Get the schema record
-    return getSchemaRecord(schemaId, network);
+    return getSchemaRecord(schemaId, chain, network);
   });
 
   const schemas = await Promise.all(schemaPromises);
@@ -299,9 +301,9 @@ export async function getSchemas(network: Network): Promise<SchemaRecord[]> {
   return schemas;
 }
 
-export async function getSchemaRegistryTable(network: Network): Promise<string> {
-  const client = getClient(network);
-  const schemaRegistry = await getSchemaRegistry(network);
+export async function getSchemaRegistryTable(chain: string, network: Network): Promise<string> {
+  const client = getClient(chain, network);
+  const schemaRegistry = await getSchemaRegistry(chain, network);
   const res = await client.getDynamicFieldObject({
     parentId: schemaRegistry.version.id,
     name: {
