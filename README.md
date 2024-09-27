@@ -11,7 +11,7 @@ MAS SDK (Move Attestation Service SDK) is a TypeScript library designed to inter
 |----|----|
 | Sui | Testnet |
 | Movement | Testnet |
-| Aptos | Comming soon |
+| Aptos | Testnet |
 
 ## Installation
 
