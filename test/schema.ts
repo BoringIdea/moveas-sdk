@@ -4,13 +4,14 @@ import { Schema, getSchemas } from '../src/schema';
 import {getSchemaRegistryTable} from '../src/schema'
 
 const network = 'testnet';
+const chain = 'sui';
 
 async function main() {
-  const schemaRegistryTableId = await getSchemaRegistryTable(network);
+  const schemaRegistryTableId = await getSchemaRegistryTable(chain, network);
   console.log('schemaRegistryTableId', schemaRegistryTableId);
 
   const keypair = getKeypair();
-  const schema = new Schema(network, keypair);
+  const schema = new Schema(chain, network, keypair);
 
   const template = 'name: string, age: u64';
   const schemaItem = bcs.string().serialize(template).toBytes();
@@ -28,7 +29,7 @@ async function main() {
     }
   }
 
-  const schemas = await getSchemas(network);
+  const schemas = await getSchemas(chain, network);
   console.log('Schemas:', schemas);
 }
 

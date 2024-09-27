@@ -41,11 +41,13 @@ export class Sas {
   private signer: Ed25519Keypair;
   private packageId: string;
   private network: Network;
+  private chain: string;
 
-  constructor(network: Network, signer: Ed25519Keypair) {
-    this.client = getClient(network);
+  constructor(chain: string, network: Network, signer: Ed25519Keypair) {
+    this.chain = chain;
+    this.client = getClient(chain, network);
     this.signer = signer;
-    this.packageId = getPackageId(network);
+    this.packageId = getPackageId(chain, network);
     this.network = network;
   }
 
@@ -59,7 +61,7 @@ export class Sas {
     description: string,
     url: string
   ): Promise<SuiTransactionBlockResponse> {
-    const registryId = getAttestationRegistryId(this.network);
+    const registryId = getAttestationRegistryId(this.chain, this.network);
     const tx = new Transaction();
 
     tx.moveCall({
@@ -102,7 +104,7 @@ export class Sas {
     url: string,
     request: string
   ): Promise<SuiTransactionBlockResponse> {
-    const registryId = getAttestationRegistryId(this.network);
+    const registryId = getAttestationRegistryId(this.chain, this.network);
     const tx = new Transaction();
 
     tx.moveCall({
@@ -136,7 +138,7 @@ export class Sas {
   }
 
   async revoke(adminId: string, schemaId: string, attestationId: string): Promise<SuiTransactionBlockResponse> {
-    const attestationRegistryId = getAttestationRegistryId(this.network);
+    const attestationRegistryId = getAttestationRegistryId(this.chain, this.network);
     
     const tx = new Transaction();
 
@@ -157,17 +159,17 @@ export class Sas {
   }
 
   async getAttestationRegistry(): Promise<AttestationRegistry> {
-    return getAttestationRegistry(this.network);
+    return getAttestationRegistry(this.chain, this.network);
   }
 
   async getAttestation(id: string): Promise<Attestation> {
-    return getAttestation(id, this.network);
+    return getAttestation(id, this.chain, this.network);
   }
 }
 
-export async function getAttestationRegistry(network: Network): Promise<AttestationRegistry> {
-  const client = getClient(network);
-  const registryId = getAttestationRegistryId(network);
+export async function getAttestationRegistry(chain: string, network: Network): Promise<AttestationRegistry> {
+  const client = getClient(chain, network);
+  const registryId = getAttestationRegistryId(chain, network);
   const response = await client.getObject({
     id: registryId,
     options: { showContent: true, showType: true },
@@ -189,8 +191,8 @@ export async function getAttestationRegistry(network: Network): Promise<Attestat
   };
 }
 
-export async function getAttestation(id: string, network: Network): Promise<Attestation> {
-  const client = getClient(network);
+export async function getAttestation(id: string, chain: string, network: Network): Promise<Attestation> {
+  const client = getClient(chain, network);
   const response = await client.getObject({
     id: id,
     options: {
@@ -238,11 +240,11 @@ export async function getAttestation(id: string, network: Network): Promise<Atte
   };
 }
 
-export async function getAttestations(network: Network): Promise<Attestation[]> {
-  const client = getClient(network);
+export async function getAttestations(chain: string, network: Network): Promise<Attestation[]> {
+  const client = getClient(chain, network);
 
   // Get the table id
-  const tableId = await getAttestationRegistryTableId(network);
+  const tableId = await getAttestationRegistryTableId(chain, network);
 
   // Get the table data
   const tableData = await client.getDynamicFields({
@@ -259,7 +261,7 @@ export async function getAttestations(network: Network): Promise<Attestation[]> 
     // key is the attestation id
     const attestationId = (tableItem.data?.content as any).fields.name;
 
-    return getAttestation(attestationId, network);
+    return getAttestation(attestationId, chain, network);
   });
 
   const attestations = await Promise.all(attestationPromises);
@@ -267,9 +269,9 @@ export async function getAttestations(network: Network): Promise<Attestation[]> 
   return attestations;
 }
 
-export async function getAttestationRegistryTable(network: Network): Promise<string> {
-  const client = getClient(network);
-  const schemaRegistry = await getAttestationRegistry(network);
+export async function getAttestationRegistryTable(chain: string, network: Network): Promise<string> {
+  const client = getClient(chain, network);
+  const schemaRegistry = await getAttestationRegistry(chain, network);
   const res = await client.getDynamicFieldObject({
     parentId: schemaRegistry.version.id,
     name: {

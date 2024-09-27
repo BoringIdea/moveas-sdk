@@ -7,11 +7,12 @@ import { Sas } from "../src/sas";
 import { Codec } from '../src/codec';
 
 const network = 'testnet';
+const chain = 'sui';
 
 async function main() {
   const keypair = getKeypair();
-  const schema = new Schema(network, keypair);
-  const sas = new Sas(network, keypair);
+  const schema = new Schema(chain, network, keypair);
+  const sas = new Sas(chain, network, keypair);
 
   for (const template of schemaTemplates) {
     const schemaItem = bcs.string().serialize(template.template).toBytes();
