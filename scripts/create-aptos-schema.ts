@@ -21,7 +21,7 @@ const aas = new Aas(account, network as any);
 
 async function main() {
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 5; i < 10; i++) {
     const schemaTemplate = schemaTemplates[i];
     const schema = bcs.string().serialize(schemaTemplate.template).toBytes();
 

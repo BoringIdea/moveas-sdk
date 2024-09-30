@@ -145,11 +145,11 @@ export async function getAptosAttestations(network: Network, start: number, limi
 
     const attestationIds = res[0] as Array<any>;
 
-    let attestations: AptosAttestation[] = [];
-    for (const attestationId of attestationIds) {
-      attestations.push(await getAptosAttestation(network, attestationId));
-    }
-    return attestations;
+    const attestationPromises = attestationIds.map(attestationId => 
+      getAptosAttestation(network, attestationId)
+    );
+    
+    return Promise.all(attestationPromises);
 }
 
 export async function getAptosSchemas(network: Network, start: number, limit: number): Promise<AptosSchema[]> {
@@ -166,11 +166,11 @@ export async function getAptosSchemas(network: Network, start: number, limit: nu
 
     const schemaAddresses = res[0] as Array<any>;
 
-    let schemas: AptosSchema[] = [];
-    for (const schemaAddr of schemaAddresses) {
-      schemas.push(await getAptosSchema(network, schemaAddr?.toString() || ""));
-    }
-    return schemas;
+    const schemaPromises = schemaAddresses.map(schemaAddr => 
+      getAptosSchema(network, schemaAddr?.toString() || "")
+    );
+    
+    return Promise.all(schemaPromises);
 }
 
 export async function getAptosSchema(network: Network, schemaAddr: string): Promise<AptosSchema> {
