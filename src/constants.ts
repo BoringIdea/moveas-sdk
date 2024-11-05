@@ -9,11 +9,11 @@ export const PACKAGES = {
         AttestationRegistryTableID: ''
       },
       testnet: {
-        PackageID: '0xac32e282fa811b017e26071f6d8ee200761c9966d6dc8c3fa7b6f05b7a3c92fe',
-        SchemaRegistryID: '0x2a2bf6847679b91feead0b6d353ddbbec739e61b96e933307ea19437fafa57f0',
-        AttestationRegistryID: '0xcdd9c4de7876309b88a6bde476fd45119913adeaea7a378d788dd581892e291a',
-        SchemaRegistryTableID: '0x6d95dc2f8c695cfb8e74a28319997498310bc8b4fe07e7b1b693ac04497b1194',
-        AttestationRegistryTableID: '0x9f31f855d5f593021e6ffaebb718fd6c2cce73c0c0d577b294e0d02b17a2c35c'
+        PackageID: '0x619872aff91819975bbf9ce2cd711f7214b49f08938f46e9f751cbe53bf89796',
+        SchemaRegistryID: '0x33a136f705d4c7ac1bd6a37e08d2c046dd2d9a74bc47fdf29ae957bc697cf4b9',
+        AttestationRegistryID: '0x45cb241407d469b7283589c0e6c1f97ce5b68d29dea7bfe7ec715cb1f31b9867',
+        SchemaRegistryTableID: '0x77cefa6d732b5f4e6bcc5f655aad70c57c366e9ade11bc0fde7831c4761703b7',
+        AttestationRegistryTableID: '0x37cd8a06199b61dd253897b32cd5001e2621b03447d161681b5967d51e881650'
       },
       devnet: {
         PackageID: '',
@@ -34,11 +34,11 @@ export const PACKAGES = {
         AttestationRegistryTableID: ''
       },
       testnet: {
-        PackageID: '0xb77e02da62e9bba4833029ccf13aea70ac2904b3fc9c49f0e4b1c79b4b903cbd',
-        SchemaRegistryID: '0xe209827e3903536df59c068a00f7317d8454a630f5e10a40777b5d6d08a82a51',
-        AttestationRegistryID: '0xc05db494413700a2b31fec9761d56b35f3abbecfd401a88660186ada1c038d4f',
-        SchemaRegistryTableID: '0x53b7b199a8719fd0297d55f0637a5c58b020d95054348adb745acfd5fed433be',
-        AttestationRegistryTableID: '0xbab1012a6e9040f9dbb35f12f0ed70b905d38fcecf5f0c50a46b338e0977042d'
+        PackageID: '0x271d8ba735478af3bbca691b5e60ede37f208bc3fe1e926049265450b66b7390',
+        SchemaRegistryID: '0x19e9d72c0fd4476989509ca4ec984e48fb30982d149b12ebdec6410f8292b496',
+        AttestationRegistryID: '0x3b104357484a59ae580e0b1d8ccd04395b7f7f4a341e04009574cf32c8f91910',
+        SchemaRegistryTableID: '0xacfccb011364e4e516d1def7e28acdff9d9d4c3293479fda662dc4362d9dab84',
+        AttestationRegistryTableID: '0x3eb8e6bee9a4acd155876bfaffd1df7302b839c5524a3d8ab57cb6bf98990e03'
       },
       devnet: {
         PackageID: '',
@@ -52,13 +52,13 @@ export const PACKAGES = {
   aptos: {
     network: {
       mainnet: {
-        PackageID: ''
+        PackageAddress: ''
       },
       testnet: {
-        PackageID: '0x3d4706208ccff60de7786e8f3ef203f3b9d7f18b222f66f786451a7dd8d81c23'
+        PackageAddress: '0x64fd80734a3e588af27bd884ed92fd96f7672b7d5c7547f9a871b74089007d82'
       },
       devnet: {
-        PackageID: ''
+        PackageAddress: ''
       }
     }
   }

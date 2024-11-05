@@ -1,5 +1,5 @@
 import { bcs } from '@mysten/bcs';
-import { Aas, getAptosAttestations, getAptosSchemas } from "../src/aas";
+import { Aas, getAptosAttestations, getAptosSchemas } from "../src/aptos/aas";
 import { Codec } from "../src/codec";
 import { Account, Network, Ed25519PrivateKey, Hex } from "@aptos-labs/ts-sdk";
 import dotenv from 'dotenv';
@@ -21,7 +21,7 @@ const aas = new Aas(account, network as any);
 
 async function main() {
 
-  for (let i = 5; i < 10; i++) {
+  for (let i = 1; i < 10; i++) {
     const schemaTemplate = schemaTemplates[i];
     const schema = bcs.string().serialize(schemaTemplate.template).toBytes();
 
@@ -31,16 +31,16 @@ async function main() {
       schema,
       schemaTemplate.name,
       "Description",
-      "Uri",
+      "Url",
       false,
-      false
+      '0x0'
     )
     console.log('creat schema res', res);
     const events = (res as any).events;
     let schemaAddress = "";
     for (const event of events) {
       if (event.type.includes("SchemaCreated")) {
-        schemaAddress = event.data.schema_addr;
+        schemaAddress = event.data.schema_address;
       }
     }
     console.log('schemaAddress', schemaAddress);
@@ -71,15 +71,15 @@ async function main() {
         console.log('create attestation res', res2);
 
         const events2 = (res2 as any).events;
-        let attestationId;
+        let attestationAddress;
         for (const event of events2) {
           if (event.type.includes("AttestationCreated")) {
-            attestationId = event.data.id;
+            attestationAddress = event.data.attestation_address;
           }
         }
-        console.log('attestationId', attestationId);
+        console.log('attestationAddress', attestationAddress);
 
-        const attestation = await aas.getAttestation(Hex.fromHexString(attestationId).toUint8Array());
+        const attestation = await aas.getAttestation(attestationAddress);
         console.log('attestation', attestation);
 
         const decodedItem = codec.decodeFromBytes(attestation.data);

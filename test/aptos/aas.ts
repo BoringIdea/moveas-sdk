@@ -1,7 +1,7 @@
 import { bcs } from '@mysten/bcs';
-import { Aas, getAptosAttestations, getAptosSchemas } from "../src/aas";
-import { Codec } from "../src/codec";
 import { Account, Network, Ed25519PrivateKey, Hex} from "@aptos-labs/ts-sdk";
+import { Aas } from "../../src/aptos/aas";
+import { Codec } from "../../src/codec";
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,6 +10,7 @@ const privateKeyBytes = Hex.fromHexString(process.env.PRIVATE_KEY?.toString() ||
 const privateKey = new Ed25519PrivateKey(privateKeyBytes)
 
 const account = Account.fromPrivateKey({privateKey});
+console.log('account', account.publicKey.toString());
 
 const network = Network.TESTNET;
 const aas = new Aas(account, network as any);
@@ -27,18 +28,18 @@ async function main() {
 
   let res = await aas.createSchema(
     schema,
-    "Name",
+    "Name11",
     "Description",
     "Uri",
     false,
-    false
+    '0x0'
   )
   console.log('creat schema res', res);
   const events = (res as any).events;
   let schemaAddress = "";
   for (const event of events) {
     if (event.type.includes("SchemaCreated")) {
-      schemaAddress = event.data.schema_addr;
+      schemaAddress = event.data.schema_address;
     }
   }
   console.log('schemaAddress', schemaAddress);
@@ -57,7 +58,7 @@ async function main() {
   const res2 = await aas.createAttestation(
     account.accountAddress.toString(),
     schemaAddress,
-    '0x00',
+    '0x0',
     0,
     false,
     attestationRaw
@@ -65,29 +66,23 @@ async function main() {
   console.log('create attestation res', res2);
 
   const events2 = (res2 as any).events;
-  let attestationId;
+  let attestation_address;
   for (const event of events2) {
     if (event.type.includes("AttestationCreated")) {
-      attestationId = event.data.id;
+      attestation_address = event.data.attestation_address;
     }
   }
-  console.log('attestationId', attestationId);
+  console.log('attestation_address', attestation_address);
 
-  const attestation = await aas.getAttestation(Hex.fromHexString(attestationId).toUint8Array());
+  const attestation = await aas.getAttestation(attestation_address);
   console.log('attestation', attestation);
 
   const decodedItem = codec.decodeFromBytes(attestation.data);
   console.log('decodedItem', decodedItem);
 
-  const attestations = await getAptosAttestations(network as any, 0, 20);
-  console.log('attestations', attestations);
-
-  const schemas = await getAptosSchemas(network as any, 0, 20);
-  console.log('schemas', schemas);
-
   // const res3 = await aas.revokeAttestation(
   //   schemaAddress,
-  //   Hex.fromHexString(attestationId).toUint8Array()
+  //   attestation_address
   // );
   // console.log('revoke attestation res', res3);
 }

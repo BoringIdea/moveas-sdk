@@ -1,9 +1,9 @@
 import { schemaTemplates } from "./templates/schema-templates";
 import { schemaInstances } from "./templates/schema-instances";
 import { bcs } from '@mysten/bcs';
-import { getKeypair } from '../src/utils';
-import { Schema } from '../src/schema';
-import { Sas } from "../src/sas";
+import { getKeypair } from '../src/sui/utils';
+import { Schema } from '../src/sui/schema';
+import { Sas } from "../src/sui/sas";
 import { Codec } from '../src/codec';
 
 const network = 'testnet';
@@ -19,6 +19,8 @@ async function main() {
     const res = await schema.new(
       new Uint8Array(schemaItem),
       template.name,
+      '',
+      '',
       true
     );
     console.log(`Created schema template ${template.name}`, res);

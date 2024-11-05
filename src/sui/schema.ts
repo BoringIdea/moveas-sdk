@@ -3,25 +3,22 @@ import {
   SuiTransactionBlockResponse
 } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
-import { bcs } from '@mysten/bcs';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
-import { ObjectOwner } from '@mysten/sui/client';
-import { getClient, getPackageId, getSchemaRegistryId, ZeroAddress, Address, Network, getSchemaRegistryTableId } from './utils';
+import { getClient, getPackageId, getSchemaRegistryId, Network, getSchemaRegistryTableId } from './utils';
 import { SuiAddress, Version } from './types';
 import bs58 from 'bs58';
 
-export interface SchemaRecord {
-  id: SuiAddress;
-  incrementId: number;
-  attestationCnt: number | 0;
-  label: string;
+export interface SuiSchema {
+  schemaAddr: SuiAddress;
+  name: string;
+  description: string;
+  url: string;
+  creator: SuiAddress;
+  createdAt: number;
   schema: Uint8Array;
   revokable: boolean;
   resolver: any | null;
-  owner: ObjectOwner | null;
-  creator: SuiAddress;
-  createdAt: number;
-  txHash: string;
+  txHash?: string;
 }
 
 export interface SchemaRegistry {
@@ -45,7 +42,13 @@ export class Schema {
   }
 
   // Create a new schema
-  public async new(schema: Uint8Array, label: string, revokable: boolean): Promise<SuiTransactionBlockResponse> {
+  public async new(
+    schema: Uint8Array,
+    name: string,
+    description: string,
+    url: string,
+    revokable: boolean,
+  ): Promise<SuiTransactionBlockResponse> {
     const schemaRegistryId = getSchemaRegistryId(this.chain, this.network);
     const tx = new Transaction();
 
@@ -54,7 +57,9 @@ export class Schema {
       arguments: [
         tx.object(schemaRegistryId),
         tx.pure.vector('u8', schema),
-        tx.pure.string(label),
+        tx.pure.string(name),
+        tx.pure.string(description),
+        tx.pure.string(url),
         tx.pure.bool(revokable)
       ],
     });
@@ -75,7 +80,13 @@ export class Schema {
   }
 
   // Create a new schema with a resolver
-  async newWithResolver(schema: Uint8Array, label: string, revokable: boolean): Promise<SuiTransactionBlockResponse> {
+  async newWithResolver(
+    schema: Uint8Array,
+    name: string,
+    description: string,
+    url: string,
+    revokable: boolean
+  ): Promise<SuiTransactionBlockResponse> {
     const schemaRegistryId = getSchemaRegistryId(this.chain, this.network);
     const tx = new Transaction();
 
@@ -84,7 +95,9 @@ export class Schema {
       arguments: [
         tx.object(schemaRegistryId),
         tx.pure.vector('u8', schema),
-        tx.pure.string(label),
+        tx.pure.string(name),
+        tx.pure.string(description),
+        tx.pure.string(url),
         tx.pure.bool(revokable)
       ],
     });
@@ -105,14 +118,14 @@ export class Schema {
   }
 
   // Create a new resolver builder
-  async newResolverBuilder(adminCap: string, schemaRecord: string): Promise<SuiTransactionBlockResponse> {
+  async newResolverBuilder(adminCap: string, schemaId: string): Promise<SuiTransactionBlockResponse> {
     const tx = new Transaction();
 
     tx.moveCall({
       target: `${this.packageId}::schema::new_resolver_builder`,
       arguments: [
         tx.object(adminCap),
-        bcs.string().serialize(schemaRecord),
+        tx.object(schemaId),
       ],
     });
 
@@ -122,13 +135,13 @@ export class Schema {
     });
   }
 
-  async addResolver(schemaRecord: string, resolverBuilder: string): Promise<SuiTransactionBlockResponse> {
+  async addResolver(schemaId: string, resolverBuilder: string): Promise<SuiTransactionBlockResponse> {
     const tx = new Transaction();
 
     tx.moveCall({
       target: `${this.packageId}::schema::add_resolver`,
       arguments: [
-        tx.object(schemaRecord),
+        tx.object(schemaId),
         tx.object(resolverBuilder),
       ],
     });
@@ -139,14 +152,14 @@ export class Schema {
     });
   }
 
-  async newRequest(schemaRecord: string, name: string): Promise<SuiTransactionBlockResponse> {
+  async newRequest(schemaId: string, name: string): Promise<SuiTransactionBlockResponse> {
     const tx = new Transaction();
 
     const request = tx.moveCall({
       target: `${this.packageId}::schema::new_request`,
       arguments: [
-        tx.object(schemaRecord),
-        bcs.string().serialize(name),
+        tx.object(schemaId),
+        tx.pure.string(name),
       ],
     });
 
@@ -158,13 +171,13 @@ export class Schema {
     });
   }
 
-  async startAttest(schemaRecord: string): Promise<SuiTransactionBlockResponse> {
+  async startAttest(schemaId: string): Promise<SuiTransactionBlockResponse> {
     const tx = new Transaction();
 
     tx.moveCall({
       target: `${this.packageId}::schema::start_attest`,
       arguments: [
-        tx.object(schemaRecord),
+        tx.object(schemaId),
       ],
     });
 
@@ -174,13 +187,13 @@ export class Schema {
     });
   }
 
-  async finishAttest(schemaRecord: string, request: string): Promise<SuiTransactionBlockResponse> {
+  async finishAttest(schemaId: string, request: string): Promise<SuiTransactionBlockResponse> {
     const tx = new Transaction();
 
     tx.moveCall({
       target: `${this.packageId}::schema::finish_attest`,
       arguments: [
-        tx.object(schemaRecord),
+        tx.object(schemaId),
         tx.object(request),
       ],
     });
@@ -195,12 +208,12 @@ export class Schema {
     return await getSchemaRegistry(this.chain, this.network);
   }
 
-  async getSchemaRecord(id: string): Promise<SchemaRecord> {
-    return await getSchemaRecord(id, this.chain, this.network);
+  async getSchema(id: string): Promise<SuiSchema> {
+    return await getSchema(id, this.chain, this.network);
   }
 }
 
-export async function getSchemaRecord(id: string, chain: string, network: Network): Promise<SchemaRecord> {
+export async function getSchema(id: string, chain: string, network: Network): Promise<SuiSchema> {
   const client = getClient(chain, network);
 
   const response = await client.getObject({
@@ -233,17 +246,16 @@ export async function getSchemaRecord(id: string, chain: string, network: Networ
   }
 
   return {
-    id: object.objectId,
+    schemaAddr: object.objectId,
     schema: new Uint8Array(fields.schema),
     resolver: resolver,
-    incrementId: fields.incrementing_id,
-    label: fields.label,
+    name: fields.name,
+    description: fields.description,
+    url: fields.url,
     creator: fields.creator,
     revokable: fields.revokable,
     createdAt: fields.created_at,
     txHash: bs58.encode(fields.tx_hash),
-    owner: response.data?.owner || null,
-    attestationCnt: fields.attestation_cnt,
   };
 }
 
@@ -271,7 +283,7 @@ export async function getSchemaRegistry(chain: string, network: Network): Promis
   };
 }
 
-export async function getSchemas(chain: string, network: Network): Promise<SchemaRecord[]> {
+export async function getSchemas(chain: string, network: Network): Promise<SuiSchema[]> {
   const client = getClient(chain, network);
 
   // Get the table id
@@ -293,7 +305,7 @@ export async function getSchemas(chain: string, network: Network): Promise<Schem
     const schemaId = (tableItem.data?.content as any).fields.name;
 
     // Get the schema record
-    return getSchemaRecord(schemaId, chain, network);
+    return getSchema(schemaId, chain, network);
   });
 
   const schemas = await Promise.all(schemaPromises);

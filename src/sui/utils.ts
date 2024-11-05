@@ -1,7 +1,7 @@
 import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { fromHEX, toHEX, bcs } from '@mysten/bcs';
-import { PACKAGES } from "./constants";
+import { PACKAGES } from "../constants";
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -54,17 +54,6 @@ export function getPackageId(chain: string, network: Network): string {
         return PACKAGES.movement.network.testnet.PackageID;
       case 'devnet':
         return PACKAGES.movement.network.devnet.PackageID;
-      default:
-        throw new Error('Invalid network');
-    }
-  } else if (chain === 'aptos') {
-    switch (network) {
-      case 'mainnet':
-        return PACKAGES.aptos.network.mainnet.PackageID;
-      case 'testnet':
-        return PACKAGES.aptos.network.testnet.PackageID;
-      case 'devnet':
-        return PACKAGES.aptos.network.devnet.PackageID;
       default:
         throw new Error('Invalid network');
     }
