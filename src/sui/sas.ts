@@ -6,24 +6,26 @@ import { Transaction } from '@mysten/sui/transactions';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { SUI_CLOCK_OBJECT_ID } from '@mysten/sui/utils';
 import { ObjectOwner } from '@mysten/sui/client'
-import { getAttestationRegistryId, getClient, getPackageId, Network, getAttestationRegistryTableId } from './utils';
+import { getAttestationRegistryId, getClient, getPackageId, Network, getAttestationRegistryTableId, getSchemaRegistryId } from './utils';
 import { SuiAddress, Version } from './types';
 import bs58 from 'bs58';
 
-export interface Attestation {
-  id: string;
-  schema: SuiAddress;
+export interface SuiAttestation {
+  attestationAddr: SuiAddress;
+  schemaAddr: SuiAddress;
   ref_attestation: SuiAddress;
-  attester: SuiAddress;
-  txHash: string;
   time: bigint;
-  revokable: boolean;
   expiration_time: bigint;
+  revocation_time: bigint;
+  revokable: boolean;
+  attester: SuiAddress;
+  recipient: SuiAddress;
   data: Uint8Array;
   name: string;
   description: string;
   url: string;
   owner: ObjectOwner | null;
+  txHash?: string;
 }
 
 export interface Status {
@@ -51,8 +53,84 @@ export class Sas {
     this.network = network;
   }
 
+  async registerSchema(
+    schema: Uint8Array,
+    name: string,
+    description: string,
+    url: string,
+    revokable: boolean,
+  ): Promise<SuiTransactionBlockResponse> {
+      const schemaRegistryId = getSchemaRegistryId(this.chain, this.network);
+
+      const tx = new Transaction();
+
+      const adminCap = tx.moveCall({
+        target: `${this.packageId}::sas::register_schema`,
+        arguments: [
+          tx.object(schemaRegistryId),
+          tx.pure.vector('u8', schema),
+          tx.pure.string(name),
+          tx.pure.string(description),
+          tx.pure.string(url),
+          tx.pure.bool(revokable),
+        ],
+      });
+
+      tx.transferObjects([adminCap], this.signer.toSuiAddress());
+
+      const result = await this.client.signAndExecuteTransaction({
+        signer: this.signer,
+        transaction: tx,
+      });
+
+      return await this.client.waitForTransaction({
+        digest: result.digest,
+        options: {
+          showEffects: true,
+        },
+      });
+  }
+
+  async registerSchemaWithResolver(
+    schema: Uint8Array,
+    name: string,
+    description: string,
+    url: string,
+    revokable: boolean,
+  ): Promise<SuiTransactionBlockResponse> {
+    const schemaRegistryId = getSchemaRegistryId(this.chain, this.network);
+
+    const tx = new Transaction();
+
+    const [resolverBuilder, adminCap] = tx.moveCall({
+      target: `${this.packageId}::sas::register_schema_with_resolver`,
+      arguments: [
+        tx.object(schemaRegistryId),
+        tx.pure.vector('u8', schema),
+        tx.pure.string(name),
+        tx.pure.string(description),
+        tx.pure.string(url),
+        tx.pure.bool(revokable)
+      ],
+    });
+
+    tx.transferObjects([resolverBuilder, adminCap], this.signer.toSuiAddress());
+
+    const result = await this.client.signAndExecuteTransaction({
+      signer: this.signer,
+      transaction: tx,
+    });
+
+    return await this.client.waitForTransaction({
+      digest: result.digest,
+      options: {
+        showEffects: true,
+      },
+    });
+  }
+
   async attest(
-    schemaRecordId: string,
+    schemaId: string,
     refAttestationId: string,
     recipient: string,
     expirationTime: bigint,
@@ -67,7 +145,7 @@ export class Sas {
     tx.moveCall({
       target: `${this.packageId}::sas::attest`,
       arguments: [
-        tx.object(schemaRecordId),
+        tx.object(schemaId),
         tx.object(registryId),
         tx.pure.address(refAttestationId),
         tx.pure.address(recipient),
@@ -94,7 +172,7 @@ export class Sas {
   }
 
   async attestWithResolver(
-    schemaRecordId: string,
+    schemaId: string,
     refAttestationId: string,
     recipient: string,
     expirationTime: bigint,
@@ -110,7 +188,7 @@ export class Sas {
     tx.moveCall({
       target: `${this.packageId}::sas::attest_with_resolver`,
       arguments: [
-        tx.object(schemaRecordId),
+        tx.object(schemaId),
         tx.object(registryId),
         tx.pure.address(refAttestationId),
         tx.pure.address(recipient),
@@ -137,7 +215,7 @@ export class Sas {
     });
   }
 
-  async revoke(adminId: string, schemaId: string, attestationId: string): Promise<SuiTransactionBlockResponse> {
+  async revokeAttestation(adminId: string, schemaId: string, attestationId: string): Promise<SuiTransactionBlockResponse> {
     const attestationRegistryId = getAttestationRegistryId(this.chain, this.network);
     
     const tx = new Transaction();
@@ -162,7 +240,7 @@ export class Sas {
     return getAttestationRegistry(this.chain, this.network);
   }
 
-  async getAttestation(id: string): Promise<Attestation> {
+  async getAttestation(id: string): Promise<SuiAttestation> {
     return getAttestation(id, this.chain, this.network);
   }
 }
@@ -191,7 +269,7 @@ export async function getAttestationRegistry(chain: string, network: Network): P
   };
 }
 
-export async function getAttestation(id: string, chain: string, network: Network): Promise<Attestation> {
+export async function getAttestation(id: string, chain: string, network: Network): Promise<SuiAttestation> {
   const client = getClient(chain, network);
   const response = await client.getObject({
     id: id,
@@ -224,14 +302,17 @@ export async function getAttestation(id: string, chain: string, network: Network
   }
 
   return {
-    id: object.objectId,
-    schema: fields.schema,
-    ref_attestation: fields.ref_id,
-    attester: fields.attester,
-    txHash: bs58.encode(fields.tx_hash),
+    attestationAddr: object.objectId,
+    schemaAddr: fields.schema,
+    ref_attestation: fields.ref_attestation,
     time: BigInt(fields.time),
     expiration_time: BigInt(fields.expireation_time),
-    revokable: fields.revokable,
+    // revocation_time: BigInt(fields.revocation_time),
+    revocation_time: BigInt(0),
+    revokable: fields.revokable,    
+    attester: fields.attester,
+    recipient: fields.recipient,
+    txHash: bs58.encode(fields.tx_hash),
     data: data,
     name: fields.name,
     description: fields.description,
@@ -240,7 +321,7 @@ export async function getAttestation(id: string, chain: string, network: Network
   };
 }
 
-export async function getAttestations(chain: string, network: Network): Promise<Attestation[]> {
+export async function getAttestations(chain: string, network: Network): Promise<SuiAttestation[]> {
   const client = getClient(chain, network);
 
   // Get the table id

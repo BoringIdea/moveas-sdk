@@ -1,10 +1,9 @@
 import { Account, Aptos, AptosConfig, Network, CommittedTransactionResponse, Hex } from "@aptos-labs/ts-sdk";
 import { createSurfClient } from '@thalalabs/surf';
-import { getPackageId } from './utils';
+import { getPackageAddress } from './utils';
 
 export interface AptosSchema {
-  id: string;
-  incrementId: number;
+  schemaAddr: string;
   name: string;
   description: string;
   uri: string;
@@ -12,22 +11,20 @@ export interface AptosSchema {
   createdAt: number;
   schema: Uint8Array;
   revokable: boolean;
-  onlyAttestByCreator: boolean;
-  attestationCnt: number;
+  resolver: string;
   txHash?: string;
-  resolver?: string;
 }
 
 export interface AptosAttestation {
-  id: string;
-  attester: string;
-  recipient: string;
+  attestationAddr: string;
   schemaAddr: string;
-  refId: string;
+  refAttestation: string;
   time: number;
   expirationTime: number;
   revocationTime: number;
   revokable: boolean;
+  attester: string;
+  recipient: string;
   data: any;
   txHash?: string;
 }
@@ -44,7 +41,7 @@ export class Aas {
     this.aptosClient = new Aptos(new AptosConfig({ network }));
     this.account = account;
     this.surfClient = createSurfClient(this.aptosClient)
-    this.packageId = getPackageId('aptos', this.network as any);
+    this.packageId = getPackageAddress('aptos', this.network as any);
   }
 
   async createSchema(
@@ -53,7 +50,7 @@ export class Aas {
     description: string,
     uri: string,
     revokable: boolean,
-    onlyAttestByCreator: boolean
+    resolver: string
   ): Promise<CommittedTransactionResponse> {
     const transaction = await this.aptosClient.transaction.build.simple({
       sender: this.account.accountAddress,
@@ -65,7 +62,7 @@ export class Aas {
           description, 
           uri, 
           revokable, 
-          onlyAttestByCreator
+          resolver
         ]
       }
     });
@@ -81,7 +78,7 @@ export class Aas {
   async createAttestation(
     recipient: string,
     schemaAddr: string,
-    refId: string,
+    refAttestation: string,
     expirationTime: number,
     revokable: boolean,
     data: Uint8Array
@@ -90,7 +87,7 @@ export class Aas {
       sender: this.account.accountAddress,
       data: {
         function: `${this.packageId}::aas::create_attestation`,
-        functionArguments: [recipient, schemaAddr, refId, expirationTime, revokable, data]
+        functionArguments: [recipient, schemaAddr, refAttestation, expirationTime, revokable, data]
       }
     });
 
@@ -104,13 +101,13 @@ export class Aas {
 
   async revokeAttestation(
     schemaAddr: string,
-    attestationId: Uint8Array
+    attestationAddr: string
   ): Promise<CommittedTransactionResponse> {
     const transaction = await this.aptosClient.transaction.build.simple({
       sender: this.account.accountAddress,
       data: {
         function: `${this.packageId}::aas::revoke_attestation`,
-        functionArguments: [schemaAddr, attestationId]
+        functionArguments: [schemaAddr, attestationAddr]
       }
     });
 
@@ -126,14 +123,14 @@ export class Aas {
     return getAptosSchema(this.network, schemaAddr);
   }
 
-  async getAttestation(attestationId: Uint8Array): Promise<AptosAttestation> {
-    return getAptosAttestation(this.network, attestationId);
+  async getAttestation(attestationAddr: string): Promise<AptosAttestation> {
+    return getAptosAttestation(this.network, attestationAddr);
   }
 }
 
 export async function getAptosAttestations(network: Network, start: number, limit: number): Promise<AptosAttestation[]> {
     const aptosClient = new Aptos(new AptosConfig({ network }));
-    const packageId = getPackageId('aptos', network as any);
+    const packageId = getPackageAddress('aptos', network as any);
     const res = await aptosClient.view(
       {
         payload: {
@@ -152,9 +149,10 @@ export async function getAptosAttestations(network: Network, start: number, limi
     return Promise.all(attestationPromises);
 }
 
+// TODO: remove this function
 export async function getAptosSchemas(network: Network, start: number, limit: number): Promise<AptosSchema[]> {
     const aptosClient = new Aptos(new AptosConfig({ network }));
-    const packageId = getPackageId('aptos', network as any);
+    const packageId = getPackageAddress('aptos', network as any);
     const res = await aptosClient.view(
       {
         payload: {
@@ -175,45 +173,44 @@ export async function getAptosSchemas(network: Network, start: number, limit: nu
 
 export async function getAptosSchema(network: Network, schemaAddr: string): Promise<AptosSchema> {
     const aptosClient = new Aptos(new AptosConfig({ network }));
-    const packageId = getPackageId('aptos', network as any);
-    const schema = await aptosClient.view(
+    const packageId = getPackageAddress('aptos', network as any);
+    const schemas = await aptosClient.view(
       {
         payload: {
-          function: `${packageId}::aas::unpack_schema`,
+          function: `${packageId}::schema::schema_data`,
           functionArguments: [schemaAddr]
         }
       }
     )
 
-    if (!schema) {
+    if (!schemas) {
       throw new Error("Schema not found");
     }
 
+    const schema = schemas[0] as any;
+
     return {
-      id: schemaAddr,
-      incrementId: schema[0] as number,
-      name: schema[1]?.toString() || "",
-      description: schema[2]?.toString() || "",
-      uri: schema[3]?.toString() || "",
-      creator: schema[4]?.toString() || "",
-      createdAt: schema[5] as number,
-      schema: Hex.fromHexString(schema[6] as any).toUint8Array(),
-      revokable: schema[7] as boolean,
-      onlyAttestByCreator: schema[8] as boolean,
-      attestationCnt: schema[9] as number,
-      txHash: schema[10]?.toString() || "",
+      schemaAddr: schemaAddr,
+      name: schema.name,
+      description: schema.description,
+      uri: schema.uri,
+      creator: schema.creator,
+      createdAt: schema.created_at,
+      schema: Hex.fromHexString(schema.schema).toUint8Array(),
+      revokable: schema.revokable,
+      resolver: schema.resolver,
+      txHash: schema.tx_hash
     }
 }
 
-export async function getAptosAttestation(network: Network, attestationId: Uint8Array | string): Promise<AptosAttestation> {
+export async function getAptosAttestation(network: Network, attestationAddr: string): Promise<AptosAttestation> {
     const aptosClient = new Aptos(new AptosConfig({ network }));
-    const packageId = getPackageId('aptos', network as any);
-    const id = typeof attestationId === 'string' ? Hex.fromHexString(attestationId).toUint8Array() : attestationId;
+    const packageId = getPackageAddress('aptos', network as any);
     const res = await aptosClient.view(
       {
         payload: {
-          function: `${packageId}::aas::get_attestation_by_id`,
-          functionArguments: [id]
+          function: `${packageId}::attestation::attestation_data`,
+          functionArguments: [attestationAddr]
         }
       }
     )
@@ -225,16 +222,16 @@ export async function getAptosAttestation(network: Network, attestationId: Uint8
     const attestation = res[0] as any;
 
     return {
-      id: attestation.id,
+      attestationAddr: attestationAddr,
       attester: attestation.attester,
       recipient: attestation.recipient,
       schemaAddr: attestation.schema,
-      refId: attestation.ref_id,
+      refAttestation: attestation.ref_attestation,
       time: attestation.time,
       expirationTime: attestation.expiration_time,
       revocationTime: attestation.revocation_time,
       revokable: attestation.revokable,
       data: Hex.fromHexString(attestation.data).toUint8Array(),
-      txHash: attestation.txHash
+      txHash: attestation.tx_hash
     }
 }

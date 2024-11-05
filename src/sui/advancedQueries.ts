@@ -1,14 +1,13 @@
 import { SuiClient } from '@mysten/sui/client';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
-import { Schema, SchemaRecord } from './schema';
-import { Sas, Attestation } from './sas';
+import { Schema, SuiSchema } from './schema';
+import { Sas, SuiAttestation } from './sas';
 import { getClient, Network } from './utils';
-import { SuiAddress } from './types';
 
-interface EnhancedSchemaRecord extends SchemaRecord {
+interface EnhancedSchemaRecord extends SuiSchema {
 }
 
-interface EnhancedAttestation extends Attestation {
+interface EnhancedAttestation extends SuiAttestation {
 }
 
 export class AdvancedQueries {
@@ -23,16 +22,16 @@ export class AdvancedQueries {
     this.sas = new Sas(chain, network, signer);
   }
 
-  async getEnhancedSchemaRecord(schemaId: string): Promise<EnhancedSchemaRecord> {
-    const schemaRecord = await this.schema.getSchemaRecord(schemaId);
+  async getEnhancedSchema(schemaId: string): Promise<EnhancedSchemaRecord> {
+    const schema = await this.schema.getSchema(schemaId);
 
-    const resolver = schemaRecord.resolver;
+    const resolver = schema.resolver;
     if (resolver) {
       // TODO
     }
     
     return {
-      ...schemaRecord,
+      ...schema,
     };
   }
 

@@ -1,7 +1,7 @@
 import { bcs } from '@mysten/bcs';
-import { getKeypair } from '../src/utils';
-import { Schema, getSchemas } from '../src/schema';
-import {getSchemaRegistryTable} from '../src/schema'
+import { getKeypair } from '../../src/sui/utils';
+import { Schema, getSchemas } from '../../src/sui/schema';
+import {getSchemaRegistryTable} from '../../src/sui/schema'
 
 const network = 'testnet';
 const chain = 'sui';
@@ -19,6 +19,8 @@ async function main() {
   const res = await schema.new(
     new Uint8Array(schemaItem),
     'Test1',
+    'Description',
+    'https://example.com',
     true
   );
   console.log('New schema result:', res);
