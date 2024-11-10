@@ -19,22 +19,17 @@ const schemaTemplate = "name: string, age: u64"
 const codec = new Codec(schemaTemplate);
 
 const schema = bcs.string().serialize(schemaTemplate).toBytes();
-console.log('schemaRaw', schema);
 
-// const encoder = new TextEncoder();
-// const schema = encoder.encode(schemaTemplate);
-
-async function main() {
-
+async function testCreateSchemaAndAttestation() {
+  console.log('=== testCreateSchemaAndAttestation ===');
   let res = await aas.createSchema(
     schema,
-    "Name11",
+    "Name" + Date.now(),
     "Description",
-    "Uri",
-    false,
+    "https://example.com",
+    true,
     '0x0'
   )
-  console.log('creat schema res', res);
   const events = (res as any).events;
   let schemaAddress = "";
   for (const event of events) {
@@ -42,28 +37,25 @@ async function main() {
       schemaAddress = event.data.schema_address;
     }
   }
-  console.log('schemaAddress', schemaAddress);
+  console.log('Create schema address', schemaAddress);
 
   const createdSchema = await aas.getSchema(schemaAddress);
-  console.log('createdSchema', createdSchema);
+  console.log('Created schema', createdSchema);
 
-  // const attestationRaw = encoder.encode("name: alice, age: 20")
   const item = {
     name: "Alice",
     age: 30n,
   };
   const attestationRaw = codec.encodeToBytes(item);
-  console.log('attestationRaw', attestationRaw);
 
   const res2 = await aas.createAttestation(
     account.accountAddress.toString(),
     schemaAddress,
     '0x0',
     0,
-    false,
+    true,
     attestationRaw
   )
-  console.log('create attestation res', res2);
 
   const events2 = (res2 as any).events;
   let attestation_address;
@@ -72,19 +64,92 @@ async function main() {
       attestation_address = event.data.attestation_address;
     }
   }
-  console.log('attestation_address', attestation_address);
+  console.log('Attestation address', attestation_address);
 
   const attestation = await aas.getAttestation(attestation_address);
-  console.log('attestation', attestation);
+  console.log('Attestation', attestation);
 
   const decodedItem = codec.decodeFromBytes(attestation.data);
-  console.log('decodedItem', decodedItem);
+  console.log('Decoded item', decodedItem);
 
-  // const res3 = await aas.revokeAttestation(
-  //   schemaAddress,
-  //   attestation_address
-  // );
-  // console.log('revoke attestation res', res3);
+  const res3 = await aas.revokeAttestation(
+    schemaAddress,
+    attestation_address
+  );
+  if (res3.success) {
+    console.log('revoke attestation success');
+  } else {
+    console.log('revoke attestation failed', res3);
+  }
+}
+
+async function testCreateSchemaAndAttestationWithResolver() {
+  console.log('=== testCreateSchemaAndAttestationWithResolver ===');
+  let res = await aas.createSchema(
+    schema,
+    "Name" + Date.now(),
+    "Description",
+    "https://example.com",
+    true,
+    '0x0f6e0bf40111bc7efe17b4b249e09474bc3e25c9d2f2ce7524379d1d5c294ac6'
+  )
+
+  const events = (res as any).events;
+  let schemaAddress = "";
+  for (const event of events) {
+    if (event.type.includes("SchemaCreated")) {
+      schemaAddress = event.data.schema_address;
+    }
+  }
+  console.log('Create schema address', schemaAddress);
+
+  const createdSchema = await aas.getSchema(schemaAddress);
+  console.log('Created schema', createdSchema);
+
+  const item = {
+    name: "Alice",
+    age: 30n,
+  };
+  const attestationRaw = codec.encodeToBytes(item);
+
+  const res2 = await aas.createAttestation(
+    account.accountAddress.toString(),
+    schemaAddress,
+    '0x0',
+    0,
+    true,
+    attestationRaw
+  )
+
+  const events2 = (res2 as any).events;
+  let attestation_address;
+  for (const event of events2) {
+    if (event.type.includes("AttestationCreated")) {
+      attestation_address = event.data.attestation_address;
+    }
+  }
+  console.log('Attestation address', attestation_address);
+
+  const attestation = await aas.getAttestation(attestation_address);
+  console.log('Attestation', attestation);
+
+  const decodedItem = codec.decodeFromBytes(attestation.data);
+  console.log('Decoded item', decodedItem);
+
+  const res3 = await aas.revokeAttestation(
+    schemaAddress,
+    attestation_address
+  );
+  if (res3.success) {
+    console.log('revoke attestation success');
+  } else {
+    console.log('revoke attestation failed', res3);
+  }
+}
+
+async function main() {
+  await testCreateSchemaAndAttestation();
+  await testCreateSchemaAndAttestationWithResolver();
 }
 
 main();

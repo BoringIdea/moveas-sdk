@@ -4,27 +4,8 @@ import {
 } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
-import { getClient, getPackageId, getSchemaRegistryId, Network, getSchemaRegistryTableId } from './utils';
-import { SuiAddress, Version } from './types';
-import bs58 from 'bs58';
-
-export interface SuiSchema {
-  schemaAddr: SuiAddress;
-  name: string;
-  description: string;
-  url: string;
-  creator: SuiAddress;
-  createdAt: number;
-  schema: Uint8Array;
-  revokable: boolean;
-  resolver: any | null;
-  txHash?: string;
-}
-
-export interface SchemaRegistry {
-  id: SuiAddress;
-  version: Version;
-}
+import { getClient, getPackageId, getSchemaRegistryId, Network } from './utils';
+import { SuiSchema, SchemaRegistry } from './types';
 
 export class Schema {
   private client: SuiClient;
@@ -85,12 +66,14 @@ export class Schema {
     name: string,
     description: string,
     url: string,
-    revokable: boolean
+    revokable: boolean,
+    resolverModule: string,
   ): Promise<SuiTransactionBlockResponse> {
     const schemaRegistryId = getSchemaRegistryId(this.chain, this.network);
+    
     const tx = new Transaction();
 
-    const [resolverBuilder, adminCap] = tx.moveCall({
+    const [resolverBuilder, adminCap, schemaRecord] = tx.moveCall({
       target: `${this.packageId}::schema::new_with_resolver`,
       arguments: [
         tx.object(schemaRegistryId),
@@ -102,7 +85,32 @@ export class Schema {
       ],
     });
 
-    tx.transferObjects([resolverBuilder, adminCap], this.signer.toSuiAddress());
+    tx.transferObjects([adminCap], this.signer.toSuiAddress());
+    
+    tx.moveCall({
+      target: `${resolverModule}::add`,
+      arguments: [
+        schemaRecord,
+        resolverBuilder, 
+      ],
+    });
+    
+    tx.moveCall({
+      target: `${this.packageId}::schema::add_resolver`,
+      arguments: [
+        schemaRecord,
+        resolverBuilder,
+      ],
+    });
+
+    tx.moveCall({
+      target: `${this.packageId}::schema::share_schema`,
+      arguments: [
+        schemaRecord,
+      ],
+    });
+
+    tx.setGasBudget(100000000);
 
     const result = await this.client.signAndExecuteTransaction({
       signer: this.signer,
@@ -114,93 +122,6 @@ export class Schema {
       options: {
         showEffects: true,
       },
-    });
-  }
-
-  // Create a new resolver builder
-  async newResolverBuilder(adminCap: string, schemaId: string): Promise<SuiTransactionBlockResponse> {
-    const tx = new Transaction();
-
-    tx.moveCall({
-      target: `${this.packageId}::schema::new_resolver_builder`,
-      arguments: [
-        tx.object(adminCap),
-        tx.object(schemaId),
-      ],
-    });
-
-    return await this.client.signAndExecuteTransaction({
-      signer: this.signer,
-      transaction: tx,
-    });
-  }
-
-  async addResolver(schemaId: string, resolverBuilder: string): Promise<SuiTransactionBlockResponse> {
-    const tx = new Transaction();
-
-    tx.moveCall({
-      target: `${this.packageId}::schema::add_resolver`,
-      arguments: [
-        tx.object(schemaId),
-        tx.object(resolverBuilder),
-      ],
-    });
-
-    return await this.client.signAndExecuteTransaction({
-      signer: this.signer,
-      transaction: tx,
-    });
-  }
-
-  async newRequest(schemaId: string, name: string): Promise<SuiTransactionBlockResponse> {
-    const tx = new Transaction();
-
-    const request = tx.moveCall({
-      target: `${this.packageId}::schema::new_request`,
-      arguments: [
-        tx.object(schemaId),
-        tx.pure.string(name),
-      ],
-    });
-
-    tx.transferObjects([request], this.signer.toSuiAddress());
-
-    return await this.client.signAndExecuteTransaction({
-      signer: this.signer,
-      transaction: tx,
-    });
-  }
-
-  async startAttest(schemaId: string): Promise<SuiTransactionBlockResponse> {
-    const tx = new Transaction();
-
-    tx.moveCall({
-      target: `${this.packageId}::schema::start_attest`,
-      arguments: [
-        tx.object(schemaId),
-      ],
-    });
-
-    return await this.client.signAndExecuteTransaction({
-      signer: this.signer,
-      transaction: tx,
-    });
-  }
-
-  async finishAttest(schemaId: string, request: string): Promise<SuiTransactionBlockResponse> {
-    const tx = new Transaction();
-
-    tx.moveCall({
-      target: `${this.packageId}::schema::finish_attest`,
-      arguments: [
-        tx.object(schemaId),
-        tx.object(request),
-      ],
-    });
-
-    return await this.client.signAndExecuteTransaction({
-      signer: this.signer,
-      transaction: tx,
     });
   }
 
@@ -255,7 +176,7 @@ export async function getSchema(id: string, chain: string, network: Network): Pr
     creator: fields.creator,
     revokable: fields.revokable,
     createdAt: fields.created_at,
-    txHash: bs58.encode(fields.tx_hash),
+    txHash: object.previousTransaction || '',
   };
 }
 
@@ -287,12 +208,13 @@ export async function getSchemas(chain: string, network: Network): Promise<SuiSc
   const client = getClient(chain, network);
 
   // Get the table id
-  const tableId = await getSchemaRegistryTableId(chain, network);
+  const tableId = await getSchemaRegistryTable(chain, network);
 
   // Get the table data
   const tableData = await client.getDynamicFields({
     parentId: tableId,
   });
+  console.log('tableData', tableData);
 
   const schemaPromises = tableData.data.map(async (dataItem) => {
     // Get the table item

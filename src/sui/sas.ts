@@ -5,38 +5,9 @@ import {
 import { Transaction } from '@mysten/sui/transactions';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { SUI_CLOCK_OBJECT_ID } from '@mysten/sui/utils';
-import { ObjectOwner } from '@mysten/sui/client'
-import { getAttestationRegistryId, getClient, getPackageId, Network, getAttestationRegistryTableId, getSchemaRegistryId } from './utils';
-import { SuiAddress, Version } from './types';
-import bs58 from 'bs58';
-
-export interface SuiAttestation {
-  attestationAddr: SuiAddress;
-  schemaAddr: SuiAddress;
-  ref_attestation: SuiAddress;
-  time: bigint;
-  expiration_time: bigint;
-  revocation_time: bigint;
-  revokable: boolean;
-  attester: SuiAddress;
-  recipient: SuiAddress;
-  data: Uint8Array;
-  name: string;
-  description: string;
-  url: string;
-  owner: ObjectOwner | null;
-  txHash?: string;
-}
-
-export interface Status {
-  is_revoked: boolean;
-  timestamp: string;
-}
-
-export interface AttestationRegistry {
-  id: string;
-  version: Version;
-}
+import { getAttestationRegistryId, getClient, getPackageId, Network } from './utils';
+import { Schema } from './schema';
+import { SuiAttestation, AttestationRegistry } from './types';
 
 export class Sas {
   private client: SuiClient;
@@ -44,6 +15,7 @@ export class Sas {
   private packageId: string;
   private network: Network;
   private chain: string;
+  private schema: Schema;
 
   constructor(chain: string, network: Network, signer: Ed25519Keypair) {
     this.chain = chain;
@@ -51,6 +23,7 @@ export class Sas {
     this.signer = signer;
     this.packageId = getPackageId(chain, network);
     this.network = network;
+    this.schema = new Schema(chain, network, signer);
   }
 
   async registerSchema(
@@ -60,35 +33,7 @@ export class Sas {
     url: string,
     revokable: boolean,
   ): Promise<SuiTransactionBlockResponse> {
-      const schemaRegistryId = getSchemaRegistryId(this.chain, this.network);
-
-      const tx = new Transaction();
-
-      const adminCap = tx.moveCall({
-        target: `${this.packageId}::sas::register_schema`,
-        arguments: [
-          tx.object(schemaRegistryId),
-          tx.pure.vector('u8', schema),
-          tx.pure.string(name),
-          tx.pure.string(description),
-          tx.pure.string(url),
-          tx.pure.bool(revokable),
-        ],
-      });
-
-      tx.transferObjects([adminCap], this.signer.toSuiAddress());
-
-      const result = await this.client.signAndExecuteTransaction({
-        signer: this.signer,
-        transaction: tx,
-      });
-
-      return await this.client.waitForTransaction({
-        digest: result.digest,
-        options: {
-          showEffects: true,
-        },
-      });
+    return this.schema.new(schema, name, description, url, revokable);
   }
 
   async registerSchemaWithResolver(
@@ -97,36 +42,9 @@ export class Sas {
     description: string,
     url: string,
     revokable: boolean,
+    resolver: string
   ): Promise<SuiTransactionBlockResponse> {
-    const schemaRegistryId = getSchemaRegistryId(this.chain, this.network);
-
-    const tx = new Transaction();
-
-    const [resolverBuilder, adminCap] = tx.moveCall({
-      target: `${this.packageId}::sas::register_schema_with_resolver`,
-      arguments: [
-        tx.object(schemaRegistryId),
-        tx.pure.vector('u8', schema),
-        tx.pure.string(name),
-        tx.pure.string(description),
-        tx.pure.string(url),
-        tx.pure.bool(revokable)
-      ],
-    });
-
-    tx.transferObjects([resolverBuilder, adminCap], this.signer.toSuiAddress());
-
-    const result = await this.client.signAndExecuteTransaction({
-      signer: this.signer,
-      transaction: tx,
-    });
-
-    return await this.client.waitForTransaction({
-      digest: result.digest,
-      options: {
-        showEffects: true,
-      },
-    });
+    return this.schema.newWithResolver(schema, name, description, url, revokable, resolver);
   }
 
   async attest(
@@ -180,10 +98,27 @@ export class Sas {
     name: string,
     description: string,
     url: string,
-    request: string
+    resolverModule: string
   ): Promise<SuiTransactionBlockResponse> {
     const registryId = getAttestationRegistryId(this.chain, this.network);
     const tx = new Transaction();
+
+    const [request] = tx.moveCall(
+      {
+        target: `${this.packageId}::schema::start_attest`,
+        arguments: [
+          tx.object(schemaId),
+        ]
+      }
+    );
+
+    tx.moveCall({
+      target: `${resolverModule}::approve`,
+      arguments: [
+        tx.object(schemaId),
+        request,
+      ]
+    });
 
     tx.moveCall({
       target: `${this.packageId}::sas::attest_with_resolver`,
@@ -198,7 +133,7 @@ export class Sas {
         tx.pure.string(description),
         tx.pure.string(url),
         tx.object(SUI_CLOCK_OBJECT_ID),
-        tx.object(request)
+        request
       ],
     });
 
@@ -221,7 +156,7 @@ export class Sas {
     const tx = new Transaction();
 
     tx.moveCall({
-      target: `${this.packageId}::attestation_registry::revoke`,
+      target: `${this.packageId}::sas::revoke`,
       arguments: [
         tx.object(adminId),
         tx.object(attestationRegistryId),
@@ -306,18 +241,17 @@ export async function getAttestation(id: string, chain: string, network: Network
     schemaAddr: fields.schema,
     ref_attestation: fields.ref_attestation,
     time: BigInt(fields.time),
-    expiration_time: BigInt(fields.expireation_time),
+    expiration_time: BigInt(fields.expiration_time),
     // revocation_time: BigInt(fields.revocation_time),
     revocation_time: BigInt(0),
     revokable: fields.revokable,    
-    attester: fields.attester,
-    recipient: fields.recipient,
-    txHash: bs58.encode(fields.tx_hash),
+    attestor: fields.attestor,
+    recipient: (object.owner as any).AddressOwner,
+    txHash: object.previousTransaction || '',
     data: data,
     name: fields.name,
     description: fields.description,
     url: fields.url,
-    owner: response.data?.owner || null,
   };
 }
 
@@ -325,7 +259,7 @@ export async function getAttestations(chain: string, network: Network): Promise<
   const client = getClient(chain, network);
 
   // Get the table id
-  const tableId = await getAttestationRegistryTableId(chain, network);
+  const tableId = await getAttestationRegistryTable(chain, network);
 
   // Get the table data
   const tableData = await client.getDynamicFields({

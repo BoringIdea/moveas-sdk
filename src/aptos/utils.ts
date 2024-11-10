@@ -15,6 +15,15 @@ export function getPackageAddress(chain: string, network: Network): string {
         throw new Error('Invalid network');
     }
   } else {
-    throw new Error('Invalid chain');
-  }
+    switch (network) {
+      case 'mainnet':
+        return PACKAGES.movement.aptos.network.mainnet.PackageAddress;
+      case 'testnet':
+        return PACKAGES.movement.aptos.network.testnet.PackageAddress;
+      case 'devnet':
+        return PACKAGES.movement.aptos.network.devnet.PackageAddress;
+      default:
+        throw new Error('Invalid network');
+    }
+  } 
 }

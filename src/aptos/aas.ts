@@ -1,33 +1,7 @@
 import { Account, Aptos, AptosConfig, Network, CommittedTransactionResponse, Hex } from "@aptos-labs/ts-sdk";
 import { createSurfClient } from '@thalalabs/surf';
 import { getPackageAddress } from './utils';
-
-export interface AptosSchema {
-  schemaAddr: string;
-  name: string;
-  description: string;
-  uri: string;
-  creator: string;
-  createdAt: number;
-  schema: Uint8Array;
-  revokable: boolean;
-  resolver: string;
-  txHash?: string;
-}
-
-export interface AptosAttestation {
-  attestationAddr: string;
-  schemaAddr: string;
-  refAttestation: string;
-  time: number;
-  expirationTime: number;
-  revocationTime: number;
-  revokable: boolean;
-  attester: string;
-  recipient: string;
-  data: any;
-  txHash?: string;
-}
+import { AptosSchema, AptosAttestation } from './types';
 
 export class Aas {
   private account: Account;
@@ -48,9 +22,9 @@ export class Aas {
     schema: Uint8Array,
     name: string,
     description: string,
-    uri: string,
+    url: string,
     revokable: boolean,
-    resolver: string
+    resolver = "0x0"
   ): Promise<CommittedTransactionResponse> {
     const transaction = await this.aptosClient.transaction.build.simple({
       sender: this.account.accountAddress,
@@ -60,7 +34,7 @@ export class Aas {
           schema, 
           name, 
           description, 
-          uri, 
+          url, 
           revokable, 
           resolver
         ]
@@ -128,49 +102,6 @@ export class Aas {
   }
 }
 
-export async function getAptosAttestations(network: Network, start: number, limit: number): Promise<AptosAttestation[]> {
-    const aptosClient = new Aptos(new AptosConfig({ network }));
-    const packageId = getPackageAddress('aptos', network as any);
-    const res = await aptosClient.view(
-      {
-        payload: {
-          function: `${packageId}::aas::get_all_attestation_ids`,
-          functionArguments: [start, limit]
-        }
-      }
-    )
-
-    const attestationIds = res[0] as Array<any>;
-
-    const attestationPromises = attestationIds.map(attestationId => 
-      getAptosAttestation(network, attestationId)
-    );
-    
-    return Promise.all(attestationPromises);
-}
-
-// TODO: remove this function
-export async function getAptosSchemas(network: Network, start: number, limit: number): Promise<AptosSchema[]> {
-    const aptosClient = new Aptos(new AptosConfig({ network }));
-    const packageId = getPackageAddress('aptos', network as any);
-    const res = await aptosClient.view(
-      {
-        payload: {
-          function: `${packageId}::aas::get_schema_addresses`,
-          functionArguments: [start, limit]
-        }
-      }
-    )
-
-    const schemaAddresses = res[0] as Array<any>;
-
-    const schemaPromises = schemaAddresses.map(schemaAddr => 
-      getAptosSchema(network, schemaAddr?.toString() || "")
-    );
-    
-    return Promise.all(schemaPromises);
-}
-
 export async function getAptosSchema(network: Network, schemaAddr: string): Promise<AptosSchema> {
     const aptosClient = new Aptos(new AptosConfig({ network }));
     const packageId = getPackageAddress('aptos', network as any);
@@ -193,7 +124,7 @@ export async function getAptosSchema(network: Network, schemaAddr: string): Prom
       schemaAddr: schemaAddr,
       name: schema.name,
       description: schema.description,
-      uri: schema.uri,
+      url: schema.url,
       creator: schema.creator,
       createdAt: schema.created_at,
       schema: Hex.fromHexString(schema.schema).toUint8Array(),
@@ -223,7 +154,7 @@ export async function getAptosAttestation(network: Network, attestationAddr: str
 
     return {
       attestationAddr: attestationAddr,
-      attester: attestation.attester,
+      attestor: attestation.attestor,
       recipient: attestation.recipient,
       schemaAddr: attestation.schema,
       refAttestation: attestation.ref_attestation,

@@ -46,19 +46,17 @@ export function getPackageId(chain: string, network: Network): string {
       default:
         throw new Error('Invalid network');
     }
-  } else if (chain === 'movement') {
+  } else {
     switch (network) {
       case 'mainnet':
-        return PACKAGES.movement.network.mainnet.PackageID;
+        return PACKAGES.movement.sui.network.mainnet.PackageID;
       case 'testnet':
-        return PACKAGES.movement.network.testnet.PackageID;
+        return PACKAGES.movement.sui.network.testnet.PackageID;
       case 'devnet':
-        return PACKAGES.movement.network.devnet.PackageID;
+        return PACKAGES.movement.sui.network.devnet.PackageID;
       default:
         throw new Error('Invalid network');
     }
-  } else {
-    throw new Error('Invalid chain');
   }
 }
 
@@ -74,19 +72,17 @@ export function getSchemaRegistryId(chain: string, network: Network): string {
       default:
         throw new Error('Invalid network');
     }
-  } else if (chain === 'movement') {
+  } else {
     switch (network) {
       case 'mainnet':
-        return PACKAGES.movement.network.mainnet.SchemaRegistryID;
+        return PACKAGES.movement.sui.network.mainnet.SchemaRegistryID;
       case 'testnet':
-        return PACKAGES.movement.network.testnet.SchemaRegistryID;
+        return PACKAGES.movement.sui.network.testnet.SchemaRegistryID;
       case 'devnet':
-        return PACKAGES.movement.network.devnet.SchemaRegistryID;
+        return PACKAGES.movement.sui.network.devnet.SchemaRegistryID;
       default:
         throw new Error('Invalid network');
     }
-  } else {
-    throw new Error('Invalid chain');
   }
 }
 
@@ -102,74 +98,16 @@ export function getAttestationRegistryId(chain: string, network: Network): strin
       default:
         throw new Error('Invalid network');
     }
-  } else if (chain === 'movement') {
-    switch (network) {
-      case 'mainnet':
-        return PACKAGES.movement.network.mainnet.AttestationRegistryID;
-      case 'testnet':
-        return PACKAGES.movement.network.testnet.AttestationRegistryID;
-      case 'devnet':
-        return PACKAGES.movement.network.devnet.AttestationRegistryID;
-      default:
-        throw new Error('Invalid network');
-    }
   } else {
-    throw new Error('Invalid chain');
-  }
-}
-
-export function getSchemaRegistryTableId(chain: string, network: Network): string {
-  if (chain === 'sui') {
     switch (network) {
       case 'mainnet':
-        return PACKAGES.sui.network.mainnet.SchemaRegistryTableID;
+        return PACKAGES.movement.sui.network.mainnet.AttestationRegistryID;
       case 'testnet':
-        return PACKAGES.sui.network.testnet.SchemaRegistryTableID;
+        return PACKAGES.movement.sui.network.testnet.AttestationRegistryID;
       case 'devnet':
-        return PACKAGES.sui.network.devnet.SchemaRegistryTableID;
+        return PACKAGES.movement.sui.network.devnet.AttestationRegistryID;
       default:
         throw new Error('Invalid network');
     }
-  } else if (chain === 'movement') {
-    switch (network) {
-      case 'mainnet':
-        return PACKAGES.movement.network.mainnet.SchemaRegistryTableID;
-      case 'testnet':
-        return PACKAGES.movement.network.testnet.SchemaRegistryTableID;
-      case 'devnet':
-        return PACKAGES.movement.network.devnet.SchemaRegistryTableID;
-      default:
-        throw new Error('Invalid network');
-    }
-  } else {
-    throw new Error('Invalid chain');
-  }
-}
-
-export function getAttestationRegistryTableId(chain: string, network: Network): string {
-  if (chain === 'sui') {
-    switch (network) {
-      case 'mainnet':
-        return PACKAGES.sui.network.mainnet.AttestationRegistryTableID;
-      case 'testnet':
-        return PACKAGES.sui.network.testnet.AttestationRegistryTableID;
-      case 'devnet':
-        return PACKAGES.sui.network.devnet.AttestationRegistryTableID;
-      default:
-        throw new Error('Invalid network');
-      }
-  } else if (chain === 'movement') {
-    switch (network) {
-      case 'mainnet':
-        return PACKAGES.movement.network.mainnet.AttestationRegistryTableID;
-      case 'testnet':
-        return PACKAGES.movement.network.testnet.AttestationRegistryTableID;
-      case 'devnet':
-        return PACKAGES.movement.network.devnet.AttestationRegistryTableID;
-      default:
-        throw new Error('Invalid network');
-    }
-  } else {
-    throw new Error('Invalid chain');
   }
 }
