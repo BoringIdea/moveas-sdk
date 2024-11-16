@@ -14,7 +14,7 @@ const privateKey = new Ed25519PrivateKey(privateKeyBytes)
 const account = Account.fromPrivateKey({ privateKey });
 
 const network = Network.TESTNET;
-const aas = new Aas(account, network as any);
+const aas = new Aas(account, 'aptos', network as any);
 
 async function main() {
 

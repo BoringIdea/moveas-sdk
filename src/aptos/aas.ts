@@ -8,14 +8,18 @@ export class Aas {
   private aptosClient: Aptos;
   private surfClient: any;
   private network: Network;
+  private chain: string;
   private packageId: string;
+  private fullNode?: string;
 
-  constructor(account: Account, network: Network) {
+  constructor(account: Account, chain: string, network: Network, fullNode?: string) {
     this.network = network;
-    this.aptosClient = new Aptos(new AptosConfig({ network }));
+    this.chain = chain;
+    this.aptosClient = fullNode ? new Aptos(new AptosConfig({ network, fullnode: fullNode })) : new Aptos(new AptosConfig({ network }));
     this.account = account;
-    this.surfClient = createSurfClient(this.aptosClient)
-    this.packageId = getPackageAddress('aptos', this.network as any);
+    this.surfClient = createSurfClient(this.aptosClient);
+    this.packageId = getPackageAddress(chain, this.network as any);
+    this.fullNode = fullNode;
   }
 
   async createSchema(
@@ -94,17 +98,17 @@ export class Aas {
   }
 
   async getSchema(schemaAddr: string): Promise<AptosSchema> {
-    return getAptosSchema(this.network, schemaAddr);
+    return getAptosSchema(this.chain, this.network, schemaAddr, this.fullNode);
   }
 
   async getAttestation(attestationAddr: string): Promise<AptosAttestation> {
-    return getAptosAttestation(this.network, attestationAddr);
+    return getAptosAttestation(this.chain, this.network, attestationAddr, this.fullNode);
   }
 }
 
-export async function getAptosSchema(network: Network, schemaAddr: string): Promise<AptosSchema> {
-    const aptosClient = new Aptos(new AptosConfig({ network }));
-    const packageId = getPackageAddress('aptos', network as any);
+export async function getAptosSchema(chain: string, network: Network, schemaAddr: string, fullNode?: string): Promise<AptosSchema> {
+    const aptosClient = fullNode ? new Aptos(new AptosConfig({ network, fullnode: fullNode })) : new Aptos(new AptosConfig({ network }));
+    const packageId = getPackageAddress(chain, network as any);
     const schemas = await aptosClient.view(
       {
         payload: {
@@ -134,9 +138,9 @@ export async function getAptosSchema(network: Network, schemaAddr: string): Prom
     }
 }
 
-export async function getAptosAttestation(network: Network, attestationAddr: string): Promise<AptosAttestation> {
-    const aptosClient = new Aptos(new AptosConfig({ network }));
-    const packageId = getPackageAddress('aptos', network as any);
+export async function getAptosAttestation(chain: string, network: Network, attestationAddr: string, fullNode?: string): Promise<AptosAttestation> {
+    const aptosClient = fullNode ? new Aptos(new AptosConfig({ network, fullnode: fullNode })) : new Aptos(new AptosConfig({ network }));
+    const packageId = getPackageAddress(chain, network as any);
     const res = await aptosClient.view(
       {
         payload: {

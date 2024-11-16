@@ -44,8 +44,8 @@ export const PACKAGES = {
           PackageAddress: ''
         },
         testnet: {
-          PackageAddress: '0xf5e99cb87f30d1c51ccfbdfc90a8bdfba2c26165cdbf5544762f01086683edef',
-          ResolverPackageAddress: '0x871aaacb8dbc3b9d5c0fd47d91b35f0054094fa4c157a2a5b5a278f6d21e9756',
+          PackageAddress: '0xf4c5c2dfc535845752cf78d38a422eb018bd93ea30c0b1841e392da3c87e2be3',
+          ResolverPackageAddress: '',
         },
         devnet: {
           PackageAddress: ''

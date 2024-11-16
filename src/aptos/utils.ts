@@ -1,6 +1,6 @@
 import { PACKAGES } from "../constants";
 
-type Network = 'mainnet' | 'testnet' | 'devnet' | 'localnet'
+type Network = 'mainnet' | 'testnet' | 'devnet' | 'localnet' | 'custom'
 
 export function getPackageAddress(chain: string, network: Network): string {
   if (chain === 'aptos') {
@@ -22,6 +22,8 @@ export function getPackageAddress(chain: string, network: Network): string {
         return PACKAGES.movement.aptos.network.testnet.PackageAddress;
       case 'devnet':
         return PACKAGES.movement.aptos.network.devnet.PackageAddress;
+      case 'custom':
+        return PACKAGES.movement.aptos.network.testnet.PackageAddress;
       default:
         throw new Error('Invalid network');
     }

@@ -7,13 +7,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const privateKeyBytes = Hex.fromHexString(process.env.PRIVATE_KEY?.toString() || "").toUint8Array();
-const privateKey = new Ed25519PrivateKey(privateKeyBytes)
+const privateKey = new Ed25519PrivateKey(privateKeyBytes);
 
 const account = Account.fromPrivateKey({privateKey});
 console.log('account', account.publicKey.toString());
 
-const network = Network.TESTNET;
-const aas = new Aas(account, 'aptos', network as any);
+const network = Network.CUSTOM;
+const aas = new Aas(account, 'movement', network as any, 'https://aptos.testnet.porto.movementlabs.xyz/v1');
 
 const schemaTemplate = "name: string, age: u64"
 const codec = new Codec(schemaTemplate);
@@ -30,6 +30,7 @@ async function testCreateSchemaAndAttestation() {
     true,
     '0x0'
   )
+  console.log('Create schema response', res);
   const events = (res as any).events;
   let schemaAddress = "";
   for (const event of events) {
@@ -149,7 +150,7 @@ async function testCreateSchemaAndAttestationWithResolver() {
 
 async function main() {
   await testCreateSchemaAndAttestation();
-  await testCreateSchemaAndAttestationWithResolver();
+  // await testCreateSchemaAndAttestationWithResolver();
 }
 
 main();
