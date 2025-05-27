@@ -59,7 +59,7 @@ export const PACKAGES = {
         PackageAddress: ''
       },
       testnet: {
-        PackageAddress: '0x22b0020431434625e70a4ffce67ecf8a7e83712df325fbaa69164ee6439a5f6d',
+        PackageAddress: '0x720ff34065b232a472df17a1a0c63fee9a4a48b93ac4aa2c856ef34fcc01b48e',
         ResolverPackageAddress: '0x0f6e0bf40111bc7efe17b4b249e09474bc3e25c9d2f2ce7524379d1d5c294ac6',
       },
       devnet: {
