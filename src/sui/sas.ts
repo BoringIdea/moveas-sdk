@@ -171,6 +171,52 @@ export class Sas {
     });
   }
 
+  async revokeAttestationWithResolver(adminId: string, schemaId: string, attestationId: string, resolverModule: string): Promise<SuiTransactionBlockResponse> {
+    const attestationRegistryId = getAttestationRegistryId(this.chain, this.network);
+    
+    const tx = new Transaction();
+    
+    const [request] = tx.moveCall(
+      {
+        target: `${this.packageId}::schema::start_revoke`,
+        arguments: [
+          tx.object(schemaId),
+        ]
+      }
+    );
+
+    tx.moveCall({
+      target: `${resolverModule}::approve`,
+      arguments: [
+        tx.object(schemaId),
+        request,
+      ]
+    });
+
+    tx.moveCall({
+      target: `${this.packageId}::sas::revoke_with_resolver`,
+      arguments: [
+        tx.object(adminId),
+        tx.object(attestationRegistryId),
+        tx.object(schemaId),
+        tx.object(attestationId),
+        request,
+      ],
+    });
+
+    const result = await this.client.signAndExecuteTransaction({
+      signer: this.signer,
+      transaction: tx,
+    });
+
+    return await this.client.waitForTransaction({
+      digest: result.digest,
+      options: {
+        showEffects: true,
+      },
+    });
+  }
+
   async getAttestationRegistry(): Promise<AttestationRegistry> {
     return getAttestationRegistry(this.chain, this.network);
   }
